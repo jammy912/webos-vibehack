@@ -48,7 +48,7 @@ npx -y -p @webos-tools/cli ares-setup-device -m lgtv -i "{'privatekey':'lgtv_web
 **3. Install**
 
 ```bash
-git clone https://github.com/OmkarK97/webos-vibehack.git
+git clone https://github.com/jammy912/webos-vibehack.git
 cd webos-vibehack
 python3 -m venv venv && venv/bin/pip install websockets
 TV_HOST=192.168.1.50 ./install.sh

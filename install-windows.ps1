@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $AppId = "com.gathin.tvhome"
-$ZipUrl = "https://github.com/OmkarK97/webos-vibehack/archive/refs/heads/main.zip"
+$ZipUrl = "https://github.com/jammy912/webos-vibehack/archive/refs/heads/main.zip"
 
 function Step($msg) { Write-Host "`n== $msg ==" -ForegroundColor Cyan }
 function Check($what) {

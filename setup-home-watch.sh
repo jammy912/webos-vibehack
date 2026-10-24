@@ -6,7 +6,7 @@ set -e
 
 TV="$1"
 DIR=/root/webos-vibehack
-RAW=https://raw.githubusercontent.com/OmkarK97/webos-vibehack/main
+RAW=https://raw.githubusercontent.com/jammy912/webos-vibehack/main
 
 if [ -z "$TV" ]; then
   echo "用法：sh $0 <電視IP>"
