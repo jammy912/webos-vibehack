@@ -25,8 +25,9 @@ keep working, and deleting the Developer Mode app removes everything.
 
 ## Setup
 
-You need a Mac on the same Wi-Fi as the TV, with Node.js (for LG's `ares` CLI, fetched with `npx`)
-and Python 3. The steps are macOS only for now: `install.sh` makes the app icon with `sips`.
+You need a Mac or Windows PC on the same Wi-Fi as the TV, with Node.js (for LG's `ares` CLI, fetched with `npx`)
+and Python 3. `install.sh` is macOS only (it makes the app icon with `sips`); on Windows use
+`install-windows.ps1` (see the end of step 3).
 
 **1. Developer Mode on the TV**
 
@@ -57,6 +58,16 @@ The first run shows an "allow this device?" prompt on the TV: accept it. That pa
 `sync-apps.py` read your apps and icons. `install.sh` then packages the app, installs it and opens
 it. Run it again whenever you install or remove apps on the TV.
 
+**On Windows**, [`install-windows.ps1`](install-windows.ps1) does steps 2 and 3 in one go: it
+installs the `ares` CLI, downloads the project to `%USERPROFILE%\webos-vibehack`, binds the TV
+(asks for the passphrase twice), syncs apps, makes the icons with Pillow instead of `sips`, then
+packages, installs and opens the launcher. Install Node.js and Python first
+(`winget install OpenJS.NodeJS.LTS`, `winget install Python.Python.3.12`), then:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install-windows.ps1 -TvHost 192.168.1.50
+```
+
 **4. A one-press shortcut**
 
 With the launcher open, hold a number key on the remote (say **1**) and assign it. From then on,
@@ -85,6 +96,17 @@ Local Network), or the watcher logs "No route to host". The log is at
 `~/Library/Logs/tv-vibehack-home-watch.log`. A Mac only redirects Home while it's awake and at
 home; for every time, run `python3 home-watch.py 192.168.1.50` on something that's always on, such
 as a Raspberry Pi.
+
+On an OpenWrt router (needs room for Python 3, e.g. 128 MB+ flash or extroot),
+[`setup-home-watch.sh`](setup-home-watch.sh) installs Python and `websockets`, downloads the
+watcher, pairs with the TV and runs it as a procd service that starts at boot:
+
+```sh
+sh setup-home-watch.sh 192.168.1.50
+logread -f | grep -i home
+```
+
+Give the TV a static DHCP lease: the watcher and its pairing key are tied to the IP.
 
 ## Using it
 
@@ -127,11 +149,14 @@ For when you do land on it. Names vary a little by webOS version:
 |---|---|
 | [`app/`](app/) | The launcher: `index.html`, `style.css`, `app.js`, `config.js`, `appinfo.json` |
 | [`install.sh`](install.sh) | Syncs your apps, packages and installs the launcher, and opens it |
+| [`install-windows.ps1`](install-windows.ps1) | The same on Windows, plus the `ares` CLI install and TV binding |
+| [`setup-home-watch.sh`](setup-home-watch.sh) | Runs the watcher as a procd service on an OpenWrt router |
 | [`sync-apps.py`](sync-apps.py) | Reads apps, icons and HDMI inputs from the TV into `app/apps.js` and `app/icons/` |
 | [`home-watch.py`](home-watch.py) | Sends the Home button to the launcher |
 | [`home-watch-mac.sh`](home-watch-mac.sh) | Runs the watcher as a macOS background service |
 | [`lgtv.py`](lgtv.py) | Pairs with and talks to the TV's remote-control service |
 | [`assets/icon.jpg`](assets/icon.jpg) | The app icon, resized to PNG by `install.sh` |
+| [`docs/webos-appletv-style-notes.zh-TW.docx`](docs/webos-appletv-style-notes.zh-TW.docx) | Notes (Traditional Chinese): how the webOS port works, OpenWrt as the watcher |
 
 ## Credits
 
