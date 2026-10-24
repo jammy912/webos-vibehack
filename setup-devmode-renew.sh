@@ -59,6 +59,7 @@ TV="$TV"
 KEY="$KEY"
 STAMP=/tmp/devmode-renew.ok
 URL="https://developer.lge.com/secure/ResetDevModeSession.dev?sessionToken="
+CHECK="https://developer.lge.com/secure/CheckDevModeSession.dev?sessionToken="
 EOF
 cat >> "$RENEW" <<'EOF'
 log() { logger -t devmode-renew "$*"; echo "$*"; }
@@ -88,7 +89,9 @@ RESP=$(wget -qO- "$URL$TOKEN" 2>&1) || {
   exit 1
 }
 date +%s > "$STAMP"
-log "續期成功（token ...${TOKEN#${TOKEN%????}}）；LG 回應：$(echo "$RESP" | head -c 200)"
+# 向 LG 查伺服器端剩餘時間（電視上 App 的數字可能沒刷新）
+LEFT=$(wget -qO- "$CHECK$TOKEN" 2>/dev/null | sed -n 's/.*"errorMsg":"\([0-9:]*\)".*/\1/p')
+log "續期成功（token ...${TOKEN#${TOKEN%????}}，剩 ${LEFT:-查詢失敗}）；LG 回應：$(echo "$RESP" | head -c 200)"
 EOF
 chmod +x "$RENEW"
 
