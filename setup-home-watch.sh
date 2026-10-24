@@ -45,7 +45,18 @@ echo "== 4/5 與電視配對 =="
 if [ -f "$DIR/.lgtv-key.json" ] && grep -q "\"$TV\"" "$DIR/.lgtv-key.json"; then
   echo "已有 $TV 的配對金鑰，略過。"
 else
-  echo "請打開電視，並在電視上接受「允許此裝置？」的提示（60 秒內）..."
+  # 電視待機或剛開機時 3001 不會回應，先等它起來，避免直接噴 TimeoutError
+  n=0
+  until python3 -c "import socket,sys; socket.create_connection((sys.argv[1], 3001), 3).close()" "$TV" 2>/dev/null; do
+    n=$((n + 1))
+    if [ "$n" -ge 12 ]; then
+      echo "重試 12 次仍連不到 $TV:3001：電視沒開、在待機，或 IP 不對。開好電視後重跑本腳本。"
+      exit 1
+    fi
+    echo "電視（$TV:3001）還沒回應，請打開電視；5 秒後重試（$n/12）..."
+    sleep 5
+  done
+  echo "請在電視上接受「允許此裝置？」的提示（60 秒內）..."
   cd "$DIR"
   python3 - "$TV" <<'EOF'
 import asyncio, sys
@@ -56,7 +67,12 @@ async def main(host):
     await ws.close()
     print("配對成功，金鑰已存到 .lgtv-key.json")
 
-asyncio.run(main(sys.argv[1]))
+try:
+    asyncio.run(main(sys.argv[1]))
+except Exception as e:
+    print(f"配對失敗：{type(e).__name__} {e}")
+    print("請確認電視開著、有按「允許」，然後重跑本腳本。")
+    sys.exit(1)
 EOF
 fi
 
