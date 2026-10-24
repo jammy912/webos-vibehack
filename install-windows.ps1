@@ -75,19 +75,34 @@ Check "pip install"
 
 # ---------- 5. 綁定電視（只需一次） ----------
 Step "5/7 綁定電視的 Developer Mode"
-$devices = (ares-setup-device --list 2>&1 | Out-String)
-if ($devices -notmatch "(?m)^\s*$Device\b") {
-    Write-Host "請確認電視上的 Developer Mode App 已開啟 Dev Mode Status 與 Key Server。"
+# 依「設定裡有沒有 privatekey、金鑰檔在不在」判斷，上次 getkey 失敗時重跑會自動補做
+$KeyName = "${Device}_webos"
+$KeyFile = Join-Path $HOME ".ssh\$KeyName"
+$dev = (ares-setup-device --listfull | Out-String | ConvertFrom-Json) | Where-Object { $_.name -eq $Device }
+if (-not $dev) {
     ares-setup-device -a $Device -i "{'host':'$TvHost','port':'9922','username':'prisoner'}"
     Check "ares-setup-device -a"
+} elseif ($dev.deviceinfo.ip -ne $TvHost) {
+    Write-Host "裝置 $Device 的 IP 是 $($dev.deviceinfo.ip)，改成 $TvHost。"
+    ares-setup-device -m $Device -i "{'host':'$TvHost'}"
+    Check "ares-setup-device -m host"
+}
+if (-not $dev -or -not $dev.details.privatekey -or -not (Test-Path $KeyFile)) {
+    $tcp = New-Object Net.Sockets.TcpClient
+    try { $tcp.Connect($TvHost, 9991) } catch { }
+    $keyServerUp = $tcp.Connected
+    $tcp.Close()
+    if (-not $keyServerUp) {
+        throw "連不到 ${TvHost}:9991：電視上的 Key Server 沒開。到 Developer Mode App 打開 Key Server 後重跑本腳本。"
+    }
     Write-Host "接下來會要求輸入 Developer Mode App 上顯示的 Passphrase。"
     ares-novacom --device $Device --getkey
     Check "ares-novacom --getkey"
     $pass = Read-Host "請再輸入一次 Passphrase（寫入裝置設定用）"
-    ares-setup-device -m $Device -i "{'privatekey':'lgtv_webos','passphrase':'$pass'}"
+    ares-setup-device -m $Device -i "{'privatekey':'$KeyName','passphrase':'$pass'}"
     Check "ares-setup-device -m"
 } else {
-    Write-Host "裝置 $Device 已設定，略過。"
+    Write-Host "裝置 $Device 已綁定（金鑰 $KeyFile），略過。"
 }
 
 # ---------- 6. 讀取電視上的 App 與圖示 ----------
