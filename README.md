@@ -142,6 +142,11 @@ For when you do land on it. Names vary a little by webOS version:
   its key: run the third command in step 2 again.
 - **Apps stop opening after a while.** Developer Mode sessions expire (LG shows the time left in
   the Developer Mode app; it was 999 hours on our C6). Press **Extend Session Time** there.
+  To renew it automatically from an OpenWrt router, copy the `ares` private key over
+  (`scp -O $HOME\.ssh\lgtv_webos root@192.168.1.1:/root/webos-vibehack/` on Windows) and run
+  `sh setup-devmode-renew.sh <TV IP> <passphrase>`: an hourly cron job reads the session token over
+  SSH and calls LG's renewal URL, at most once a day. This is a community-documented method, not an
+  official LG API; check with `logread | grep devmode-renew`.
 
 ## Files
 
@@ -151,6 +156,7 @@ For when you do land on it. Names vary a little by webOS version:
 | [`install.sh`](install.sh) | Syncs your apps, packages and installs the launcher, and opens it |
 | [`install-windows.ps1`](install-windows.ps1) | The same on Windows, plus the `ares` CLI install and TV binding |
 | [`setup-home-watch.sh`](setup-home-watch.sh) | Runs the watcher as a procd service on an OpenWrt router |
+| [`setup-devmode-renew.sh`](setup-devmode-renew.sh) | Renews the Developer Mode session from an OpenWrt router via cron |
 | [`sync-apps.py`](sync-apps.py) | Reads apps, icons and HDMI inputs from the TV into `app/apps.js` and `app/icons/` |
 | [`home-watch.py`](home-watch.py) | Sends the Home button to the launcher |
 | [`home-watch-mac.sh`](home-watch-mac.sh) | Runs the watcher as a macOS background service |
