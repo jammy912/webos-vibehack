@@ -8,6 +8,10 @@ appears, launches the launcher on top. LG's home shows for about half a second.
 
 Press Home twice within ESCAPE_SECONDS to stay on LG's home (for its menus).
 
+The remote's Home Dashboard button is turned into an input switch the same way: each press goes
+to the next HDMI input (1 -> 2 -> 3 -> 4 -> 1), or to HDMI 1 when no HDMI input is in front.
+Press it twice within ESCAPE_SECONDS to open the Home Dashboard as usual.
+
     python3 home-watch.py 192.168.1.50
 
 Needs: pip install websockets. Pair once first (sync-apps.py does it).
@@ -22,6 +26,8 @@ import lgtv
 
 LAUNCHER = "com.gathin.tvhome"
 LG_HOME = "com.webos.app.home"
+DASHBOARD = "com.webos.app.homeconnect"
+HDMI_INPUTS = ["com.webos.app.hdmi1", "com.webos.app.hdmi2", "com.webos.app.hdmi3", "com.webos.app.hdmi4"]
 ESCAPE_SECONDS = 3.0
 
 
@@ -33,6 +39,8 @@ async def watch(host):
     ws = await lgtv.session(host, ping_interval=10, ping_timeout=10)
     log("connected to", host)
     last_redirect = 0.0
+    last_switch = 0.0
+    previous = None
     try:
         await ws.send(json.dumps({"type": "subscribe", "id": "fg",
                                   "uri": "ssap://com.webos.applicationManager/getForegroundAppInfo",
@@ -42,6 +50,22 @@ async def watch(host):
             if msg.get("id") != "fg":
                 continue
             app = msg.get("payload", {}).get("appId")
+            before, previous = previous, app
+            if app == DASHBOARD:
+                now = time.monotonic()
+                if now - last_switch < ESCAPE_SECONDS:
+                    log("Dashboard pressed twice: staying on Home Dashboard")
+                    last_switch = 0.0
+                    continue
+                last_switch = now
+                if before in HDMI_INPUTS:
+                    target = HDMI_INPUTS[(HDMI_INPUTS.index(before) + 1) % len(HDMI_INPUTS)]
+                else:
+                    target = HDMI_INPUTS[0]
+                await ws.send(json.dumps({"type": "request", "id": "launch", "uri": "ssap://system.launcher/launch",
+                                          "payload": {"id": target}}))
+                log("Home Dashboard ->", target)
+                continue
             if app != LG_HOME:
                 continue
             now = time.monotonic()

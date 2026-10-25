@@ -83,6 +83,10 @@ appears, opens the launcher on top.
 - **Press Home twice** within three seconds to stay on LG's home, for its menus.
 - When the TV powers on to LG's home, it goes to the launcher too.
 - When the watcher isn't running, Home simply opens LG's home as usual.
+- **The Home Dashboard button switches inputs**: each press goes to the next HDMI input
+  (1 → 2 → 3 → 4 → 1, inputs without a signal included), or to HDMI 1 from anything else. Press it
+  twice within three seconds to open the Home Dashboard as usual. The Guide button can't be used for
+  this: it opens an overlay, not an app, so the watcher never sees it.
 
 On a Mac, install it as a background service that starts at login:
 
