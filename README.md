@@ -126,6 +126,11 @@ saved on the TV.
 app and the number of columns. App ids come from `venv/bin/python sync-apps.py $TV_HOST --list`.
 Changing `dockApps` resets an order arranged on the TV.
 
+**Photo or video background**: put a 1920x1080 JPEG at `app/background.jpg`, or an H.264 MP4 at
+`app/background.mp4` (looped, muted, paused while another app is open), and reinstall. The video
+wins if both are there. It's shown darkened behind everything; without either file the background
+stays black. Both files are gitignored, and they're packaged into the app, so keep the video small.
+
 ## Cleaning up LG's home
 
 For when you do land on it. Names vary a little by webOS version:

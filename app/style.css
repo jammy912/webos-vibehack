@@ -18,6 +18,24 @@ html, body {
   cursor: default;
 }
 
+/* Set by app.js when app/background.jpg exists; darkened so the text stays readable. */
+body.photo {
+  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('background.jpg') center / cover no-repeat, #000;
+}
+
+/* Added by app.js when app/background.mp4 exists; same darkening as the photo. */
+#bgVideo {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  object-fit: cover;
+  opacity: 0;
+  filter: brightness(0.55);
+  pointer-events: none;
+}
+#bgVideo.shown { opacity: 1; }
+
 /* ---- ambient glow ---------------------------------------------------------------------------- */
 
 .ambient {

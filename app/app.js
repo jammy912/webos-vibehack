@@ -600,7 +600,31 @@
   }
 
   document.addEventListener('webOSRelaunch', resume);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) resume(); });
+  document.addEventListener('visibilitychange', function () {
+    if (bgVideo) { if (document.hidden) bgVideo.pause(); else bgVideo.play(); }
+    if (!document.hidden) resume();
+  });
+
+  // Optional background, both gitignored: app/background.mp4 (looped, muted), else
+  // app/background.jpg, else plain black. The video is paused while another app is in front.
+  var bgVideo = null;
+  function usePhoto() {
+    var photo = new Image();
+    photo.onload = function () { document.body.classList.add('photo'); };
+    photo.src = 'background.jpg';
+  }
+  (function () {
+    var v = document.createElement('video');
+    v.id = 'bgVideo';
+    v.muted = true;
+    v.loop = true;
+    v.autoplay = true;
+    v.setAttribute('playsinline', '');
+    v.addEventListener('loadeddata', function () { bgVideo = v; v.classList.add('shown'); });
+    v.addEventListener('error', function () { v.parentNode.removeChild(v); usePhoto(); });
+    v.src = 'background.mp4';
+    document.body.insertBefore(v, document.body.firstChild);   // first, so every layer paints above it
+  })();
 
   build();
   updateClock();
