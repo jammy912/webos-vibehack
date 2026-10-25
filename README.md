@@ -124,7 +124,9 @@ saved on the TV.
 
 **Configure** in [`app/config.js`](app/config.js): the starting dock, apps to hide, the Live TV
 app and the number of columns. App ids come from `venv/bin/python sync-apps.py $TV_HOST --list`.
-Changing `dockApps` resets an order arranged on the TV.
+Changing `dockApps` resets an order arranged on the TV. `theme` picks the look: `''` for the tvOS
+black, `'gardevoir'` for gown white, mint and ruby on deep emerald, with a drawn emblem and
+sparkles ([`app/theme-gardevoir.css`](app/theme-gardevoir.css)).
 
 ## Cleaning up LG's home
 
