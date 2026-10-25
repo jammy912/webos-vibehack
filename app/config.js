@@ -17,8 +17,5 @@ window.CONFIG = {
   liveTvApp: 'com.webos.app.livetv',
 
   // Tiles per row in the grid; the dock always has this many slots.
-  columns: 4,
-
-  // Look: '' for the tvOS black, 'gardevoir' for white, mint and ruby on emerald.
-  theme: 'gardevoir'
+  columns: 4
 };
