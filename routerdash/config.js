@@ -13,6 +13,9 @@ window.CONFIG = {
   // Tunnel ping results older than this many seconds aren't shown (the router measures every 25-40 s).
   pingStale: 120,
 
+  // A ping this slow (ms) fills the card's bar and turns it red; 50 % loss does too.
+  pingBad: 150,
+
   // Dial-in WireGuard servers: idle is normal, so they're grey instead of red when nobody's connected.
   dialIn: ['wg1'],
 

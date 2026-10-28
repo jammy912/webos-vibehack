@@ -19,20 +19,24 @@
   <div id="cards">
     <div class="card" id="cWan"><div class="label">WAN</div><div class="value"></div><div class="sub"></div></div>
     <div class="card" id="cWan6"><div class="label">WAN6</div><div class="value"></div><div class="sub"></div></div>
-    <div class="card" id="cCpu"><div class="label">CPU</div><div class="value"></div><div class="sub"></div></div>
-    <div class="card" id="cMem"><div class="label">Memory</div><div class="value"></div><div class="sub"></div></div>
+    <div class="card" id="cCpu"><div class="label">CPU <span id="cpuInfo" class="aside"></span></div><div class="value"></div><div class="sub"></div></div>
+    <div class="card" id="cMem"><div class="label">Memory <span id="memTotal" class="aside"></span></div><div class="value"></div><div class="sub"></div></div>
     <div class="card" id="cConn"><div class="label">Connections</div><div class="value"></div><div class="sub"></div></div>
     <div class="card" id="cDhcp"><div class="label">DHCP clients</div><div class="value"></div><div class="sub"></div></div>
   </div>
 
-  <!-- WAN throughput graph and Tailscale. -->
+  <!-- WAN throughput graph, ports and Wi-Fi. -->
   <div id="middle">
     <div class="card" id="cGraph">
       <div class="label">Throughput <span id="wanDev"></span></div>
+      <div id="scale"></div>
       <div id="rates"><span class="down" id="rateDown"></span><span class="up" id="rateUp"></span></div>
-      <canvas id="graph" width="1112" height="130"></canvas>
+      <canvas id="graph" width="1075" height="210"></canvas>
     </div>
-    <div class="card" id="cTs"><div class="label">Tailscale</div><div class="value"></div><div class="sub"></div></div>
+    <div id="side">
+      <div class="card list" id="cPorts"><div class="label">Ports</div><div class="rows"></div></div>
+      <div class="card list" id="cWifi"><div class="label">Wi-Fi <span id="wifiTotal"></span></div><div class="rows"></div></div>
+    </div>
   </div>
 
   <div class="sectionLabel">WireGuard</div>

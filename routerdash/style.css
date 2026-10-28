@@ -57,17 +57,21 @@ header {
   transition: opacity 300ms ease;
 }
 
-/* Status stripe on the left edge. */
-.card::before {
+/* Level bar on the left edge: a dim track (::after) with a fill (::before) rising from the bottom.
+   app.js sets --lvl (0..1) and --c (green to red) per card. */
+.card::before, .card::after {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  left: 0; bottom: 0;
+  width: 10px;
 }
-.card.ok::before { background: #30d158; }
-.card.warn::before { background: #ff9f0a; }
-.card.bad::before { background: #ff453a; }
+.card::after { top: 0; background: rgba(255, 255, 255, 0.08); }
+.card::before {
+  z-index: 1;
+  height: calc(var(--lvl, 1) * 100%);
+  background: var(--c, rgba(255, 255, 255, 0.2));
+  transition: height 600ms ease, background 600ms ease;
+}
 .card.na { opacity: 0.45; }
 
 body.stale .card { opacity: 0.35; }
@@ -87,28 +91,49 @@ body.stale .card { opacity: 0.35; }
   position: absolute;
   left: 100px;
   right: 100px;
-  top: 170px;
-  height: 190px;
+  top: 160px;
+  height: 160px;
   display: flex;
   gap: 24px;
 }
-#cards .card { flex: 1; }
+#cards .card { flex: 1; padding: 18px 28px; }
+#cards #cCpu { flex: 1.35; }   /* room for the 1, 5 and 15 minute loads */
+.label .aside { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
+#cards .value { font-size: 50px; margin-top: 4px; }
 
+/* Throughput takes two thirds; ports and Wi-Fi share the last third, stacked. */
 #middle {
   position: absolute;
   left: 100px;
   right: 100px;
-  top: 380px;
-  height: 230px;
+  top: 342px;
+  height: 302px;
   display: flex;
   gap: 24px;
 }
-#cGraph { flex: 2.2; }
-#cTs { flex: 1; }
-#cTs .value { font-size: 64px; margin-top: 24px; }
+#cGraph { flex: 2; }
+#side { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+#cPorts { flex: none; }
+#cWifi { flex: 1; min-height: 0; }
+
+/* Ports and Wi-Fi: one line per port or SSID. */
+.list { padding: 12px 24px; }
+.list .label { font-size: 18px; }
+.list .rows { margin-top: 4px; }
+.list .row { display: flex; align-items: baseline; height: 27px; font-size: 20px; white-space: nowrap; }
+.list .row .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 12px; background: #30d158; flex: none; align-self: center; }
+.list .row.off .dot { background: rgba(255, 255, 255, 0.25); }
+.list .row.off { color: rgba(255, 255, 255, 0.45); }
+.list .row .n { width: 104px; overflow: hidden; text-overflow: ellipsis; }
+.list .row .m { flex: 1; color: rgba(255, 255, 255, 0.6); overflow: hidden; text-overflow: ellipsis; }
+.list .row .r { margin-left: 10px; font-size: 18px; }
+.list .row .big { font-size: 24px; margin-left: 10px; }
+.list .empty { font-size: 20px; color: rgba(255, 255, 255, 0.45); margin-top: 4px; }
+#wifiTotal { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
 
 #wanDev { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
-#rates { position: absolute; right: 28px; top: 16px; font-size: 30px; }
+#rates { position: absolute; right: 28px; top: 16px; font-size: 28px; }
+#scale { font-size: 16px; color: rgba(255, 255, 255, 0.35); margin-top: 4px; }
 #rates span { margin-left: 32px; }
 .down { color: #64d2ff; }
 .up { color: #bf5af2; }
@@ -119,7 +144,7 @@ body.stale .card { opacity: 0.35; }
 .sectionLabel {
   position: absolute;
   left: 100px;
-  top: 630px;
+  top: 660px;
   font-size: 22px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -130,13 +155,13 @@ body.stale .card { opacity: 0.35; }
   position: absolute;
   left: 100px;
   right: 100px;
-  top: 666px;
+  top: 696px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 20px;
 }
 /* Traffic first: rates and a graph on one scale shared by every tunnel; state is the small print. */
-#wg .card { height: 178px; padding: 14px 24px; }
+#wg .card { padding: 14px 24px; }
 #wg .name { font-size: 26px; }
 #wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
 #wg .card.bad .state { color: #ff6b61; }
@@ -147,3 +172,16 @@ body.stale .card { opacity: 0.35; }
 #wg .share i.up { background: #bf5af2; }
 #wg canvas { display: block; margin-top: 6px; }
 #wg .small { font-size: 16px; color: rgba(255, 255, 255, 0.45); margin-top: 6px; white-space: nowrap; }
+
+/* More tunnels than fit in two rows (app.js layoutWg): smaller tiles, the graph and totals go first,
+   then the bar. */
+#wg.compact .card { padding: 10px 20px; }
+#wg.compact canvas, #wg.compact .small { display: none; }
+#wg.compact .name { font-size: 23px; }
+#wg.compact .state { top: 14px; }
+#wg.compact .wgRates { font-size: 22px; margin-top: 4px; }
+#wg.tiny .share { display: none; }
+#wg.tiny .card { padding: 8px 18px; }
+#wg.tiny .name { font-size: 20px; }
+#wg.tiny .state { top: 10px; font-size: 15px; }
+#wg.tiny .wgRates { font-size: 19px; margin-top: 2px; }
