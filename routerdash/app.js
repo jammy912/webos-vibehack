@@ -241,7 +241,11 @@
     renderRows('cWifi', list, d.wifi === undefined && !mesh ? 'Not reported by the router' : 'No Wi-Fi up', function (row, w) {
       row.className = 'row';
       row.children[1].textContent = w.ssid || w.radio;
-      row.children[2].textContent = bandName(w.band) + (w.channel ? ' · ch' + w.channel : '');
+      // One AP gives a channel; the whole house gives each AP's channel for this SSID: "ch11/6".
+      var chans = w.channels ? w.channels.map(function (c) { return c.channel; }).filter(function (c, i, a) {
+        return c && a.indexOf(c) === i;
+      }) : w.channel ? [w.channel] : [];
+      row.children[2].textContent = bandName(w.band) + (chans.length ? ' · ch' + chans.join('/') : '');
       row.children[3].className = 'r big';
       row.children[3].textContent = w.clients === null || w.clients === undefined ? '-' : w.clients;
     });
