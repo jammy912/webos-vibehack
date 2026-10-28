@@ -112,8 +112,8 @@ body.stale .card { opacity: 0.35; }
   display: flex;
   gap: 24px;
 }
-#cGraph { flex: 1; min-width: 0; }
-#cTop { flex: 1; min-width: 0; padding: 14px 24px; }
+#cGraph { flex: 1.25; min-width: 0; }
+#cTop { flex: 0 0 440px; padding: 14px 24px; }   /* just wide enough: name, a short bar, the rate */
 #side { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 #cPorts { flex: none; }
 #cWifi { flex: 1; min-height: 0; }
@@ -196,7 +196,7 @@ body.stale .card { opacity: 0.35; }
 #cTop .rows { margin-top: 6px; }
 #cTop .host { display: flex; align-items: center; height: 24.5px; font-size: 17px; white-space: nowrap; }
 #cTop .host .n { width: 150px; overflow: hidden; text-overflow: ellipsis; }
-#cTop .host .b { flex: 1; display: flex; height: 6px; margin: 0 12px; border-radius: 3px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+#cTop .host .b { width: 120px; flex: none; display: flex; height: 6px; margin: 0 12px; border-radius: 3px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
 #cTop .host .b i.down { background: #64d2ff; }
 #cTop .host .b i.up { background: #bf5af2; }
 #cTop .host .r { width: 92px; text-align: right; color: rgba(255, 255, 255, 0.75); }
