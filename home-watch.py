@@ -12,6 +12,9 @@ The remote's Home Dashboard button is turned into an input switch the same way: 
 to the next HDMI input (1 -> 2 -> 3 -> 4 -> 1), or to HDMI 1 when no HDMI input is in front.
 Press it twice within ESCAPE_SECONDS to open the Home Dashboard as usual.
 
+The LG Channels button opens the router dashboard (routerdash/) instead; press it twice within
+ESCAPE_SECONDS to stay on LG Channels.
+
     python3 home-watch.py 192.168.1.50
 
 Needs: pip install websockets. Pair once first (sync-apps.py does it).
@@ -28,6 +31,8 @@ LAUNCHER = "com.gathin.tvhome"
 LG_HOME = "com.webos.app.home"
 DASHBOARD = "com.webos.app.homeconnect"
 HDMI_INPUTS = ["com.webos.app.hdmi1", "com.webos.app.hdmi2", "com.webos.app.hdmi3", "com.webos.app.hdmi4"]
+LG_CHANNELS = "com.webos.app.lgchannels"
+ROUTERDASH = "com.jammy.routerdash"
 ESCAPE_SECONDS = 3.0
 
 
@@ -40,6 +45,7 @@ async def watch(host):
     log("connected to", host)
     last_redirect = 0.0
     last_switch = 0.0
+    last_channels = 0.0
     previous = None
     try:
         await ws.send(json.dumps({"type": "subscribe", "id": "fg",
@@ -65,6 +71,17 @@ async def watch(host):
                 await ws.send(json.dumps({"type": "request", "id": "launch", "uri": "ssap://system.launcher/launch",
                                           "payload": {"id": target}}))
                 log("Home Dashboard ->", target)
+                continue
+            if app == LG_CHANNELS:
+                now = time.monotonic()
+                if now - last_channels < ESCAPE_SECONDS:
+                    log("LG Channels pressed twice: staying on LG Channels")
+                    last_channels = 0.0
+                    continue
+                last_channels = now
+                await ws.send(json.dumps({"type": "request", "id": "launch", "uri": "ssap://system.launcher/launch",
+                                          "payload": {"id": ROUTERDASH}}))
+                log("LG Channels -> router dashboard")
                 continue
             if app != LG_HOME:
                 continue
