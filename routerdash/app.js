@@ -54,16 +54,26 @@
    * and turns from green to red as it rises: green up to 40 %, red at 100 %. A warn or bad state lifts
    * it to at least amber or full red. With no level the bar is full, in the state's colour.
    */
+  /** Green up to a level of 0.4, then through amber to red at 1. */
+  function levelHue(l) { return 135 * (1 - clamp((l - 0.4) / 0.6)); }
+
+  /** Text colour for a ping on the bars' scale: green when normal, amber to red as it gets worse. */
+  function pingColor(level) { return 'hsl(' + Math.round(levelHue(clamp(level))) + ', 80%, 60%)'; }
+
   function gauge(el, state, level) {
     var l, hue;
-    if (level === null || level === undefined || isNaN(level)) {
+    var noData = level === null || level === undefined || isNaN(level);
+    // Nothing measured and nothing wrong: an empty track with a dot, so a full green bar always means
+    // a real, high reading. Down or warning still fills the bar, as an alarm.
+    el.classList.toggle('nodata', noData && state !== 'bad' && state !== 'warn');
+    if (noData) {
       l = 1;
       hue = state === 'bad' ? 0 : state === 'warn' ? 35 : 135;
     } else {
       l = clamp(level);
       if (state === 'warn') l = Math.max(l, 0.75);
       if (state === 'bad') l = 1;
-      hue = 135 * (1 - clamp((l - 0.4) / 0.6));
+      hue = levelHue(l);
     }
     el.style.setProperty('--lvl', l);
     el.style.setProperty('--c', state === 'na' || state === '' ? 'rgba(255,255,255,0.2)' : 'hsl(' + Math.round(hue) + ', 75%, 50%)');
@@ -107,7 +117,17 @@
     if (!link) { card(id, 'na', 'N/A', 'not on this gateway'); return; }
     if (!link.up) { card(id, 'bad', 'Down', ''); return; }
     // An uptime that keeps resetting means the link is flapping.
-    card(id, link.uptime < 300 ? 'warn' : 'ok', 'Up', 'for ' + duration(link.uptime) + (ping || '') + (addr ? ' · ' + addr : ''), level);
+    card(id, link.uptime < 300 ? 'warn' : 'ok', 'Up', '', level);
+    // Subtitle: uptime, the ping in its health colour, then the masked address.
+    var sub = $(id).querySelector('.sub'), p = document.createElement('span');
+    sub.textContent = 'for ' + duration(link.uptime);
+    if (ping) {
+      p.textContent = ping.replace(/^ · /, '');
+      p.style.color = pingColor(level);
+      sub.appendChild(document.createTextNode(' · '));
+      sub.appendChild(p);
+    }
+    if (addr) sub.appendChild(document.createTextNode(' · ' + addr));
   }
 
   function render(d) {
@@ -200,15 +220,28 @@
     gauge($('cPorts'), ports.length ? (bad ? 'bad' : 'ok') : '', null);
   }
 
+  function bandName(b) { return b === '2g' ? '2.4G' : b === '5g' ? '5G' : b === '6g' ? '6G' : (b || ''); }
+
   function renderWifi(d) {
-    var list = d.wifi || [], total = 0;
-    list.forEach(function (w) { total += w.clients || 0; });
-    $('wifiTotal').textContent = list.length ? total + (total === 1 ? ' client' : ' clients') : '';
-    renderRows('cWifi', list, d.wifi === undefined ? 'Not reported by the router' : 'No Wi-Fi up', function (row, w) {
-      var band = w.band === '2g' ? '2.4G' : w.band === '5g' ? '5G' : w.band === '6g' ? '6G' : (w.band || '');
+    // The whole house (every mesh AP, from the main gateway) when the router reports it; otherwise
+    // only this gateway's own radios.
+    var mesh = d.wifi_mesh, list, total = 0;
+    if (mesh && mesh.by_ssid) {
+      // The router's order changes between polls: sort so rows don't jump.
+      list = mesh.by_ssid.slice().sort(function (a, b) {
+        return (a.ssid || '').localeCompare(b.ssid || '') || (a.band || '').localeCompare(b.band || '');
+      });
+      total = typeof mesh.total === 'number' ? mesh.total : list.reduce(function (s, w) { return s + (w.clients || 0); }, 0);
+    } else {
+      list = d.wifi || [];
+      list.forEach(function (w) { total += w.clients || 0; });
+    }
+    $('wifiTotal').textContent = list.length ? total + (total === 1 ? ' client' : ' clients') +
+      (mesh && mesh.by_ssid ? ' · ' + (mesh.nodes_seen || (mesh.by_node || []).length) + ' APs' : ' · this AP') : '';
+    renderRows('cWifi', list, d.wifi === undefined && !mesh ? 'Not reported by the router' : 'No Wi-Fi up', function (row, w) {
       row.className = 'row';
       row.children[1].textContent = w.ssid || w.radio;
-      row.children[2].textContent = band + (w.channel ? ' · ch' + w.channel : '');
+      row.children[2].textContent = bandName(w.band) + (w.channel ? ' · ch' + w.channel : '');
       row.children[3].className = 'r big';
       row.children[3].textContent = w.clients === null || w.clients === undefined ? '-' : w.clients;
     });
@@ -281,20 +314,24 @@
       else if (w.peers > 0 && stale) { state = 'bad'; text = 'No handshake'; }
       else { state = 'ok'; text = 'Up'; }
       if (w.up && w.handshake_age !== null && w.handshake_age !== undefined) text += ' · ' + duration(w.handshake_age);
-      // Ping comes from the router's own tunnel check, so only some tunnels have it.
-      if (w.up) text += pingText(w.ping_ms, w.ping_loss, w.ping_ts, d.ts);
 
       var hist = wgHistory[w.name], h = hist[hist.length - 1];
+      var ping = state === 'ok' && w.up ? pingText(w.ping_ms, w.ping_loss, w.ping_ts, d.ts).replace(/^ · /, '') : '';
       el.className = 'card ' + state;
       // Bar: the tunnel's share of its qosify limit, or its ping health, whichever is worse.
       gauge(el, state, w.up ? worst(trafficLevel(d, w.name, h), pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : null);
       el.querySelector('.name').textContent = w.name;
-      el.querySelector('.state').textContent = text;
+      // Top right: the ping, readable from the sofa, when the tunnel is up and measured; otherwise the
+      // state (Down, No handshake, Standby). Up and the handshake age move to the small print.
+      var corner = el.querySelector('.state');
+      corner.className = 'state' + (ping ? ' ping' : '');
+      corner.textContent = ping || text;
+      corner.style.color = ping ? pingColor(pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : '';
       el.querySelector('.wgRates .down').textContent = '↓ ' + (h ? rate(h.down) : '-');
       el.querySelector('.wgRates .up').textContent = '↑ ' + (h ? rate(h.up) : '-');
       el.querySelector('.share .down').style.width = (h ? h.down / busiest * 100 : 0) + '%';
       el.querySelector('.share .up').style.width = (h ? h.up / busiest * 100 : 0) + '%';
-      el.querySelector('.small').textContent = w.up ? 'total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '';
+      el.querySelector('.small').textContent = w.up ? (ping ? text + ' · ' : '') + 'total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '';
       drawLines(el.querySelector('canvas'), hist, max, 3);
     });
   }

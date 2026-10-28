@@ -72,6 +72,7 @@ header {
   background: var(--c, rgba(255, 255, 255, 0.2));
   transition: height 600ms ease, background 600ms ease;
 }
+.card.nodata::before { height: 10px; bottom: calc(50% - 5px); border-radius: 5px; }   /* the dot, clear of the rounded corners */
 .card.na { opacity: 0.45; }
 
 body.stale .card { opacity: 0.35; }
@@ -164,6 +165,7 @@ body.stale .card { opacity: 0.35; }
 #wg .card { padding: 14px 24px; }
 #wg .name { font-size: 26px; }
 #wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
+#wg .state.ping { top: 12px; font-size: 26px; color: #fff; }
 #wg .card.bad .state { color: #ff6b61; }
 #wg .wgRates { font-size: 25px; margin-top: 6px; white-space: nowrap; }
 #wg .wgRates .up { margin-left: 18px; }
@@ -185,3 +187,5 @@ body.stale .card { opacity: 0.35; }
 #wg.tiny .name { font-size: 20px; }
 #wg.tiny .state { top: 10px; font-size: 15px; }
 #wg.tiny .wgRates { font-size: 19px; margin-top: 2px; }
+#wg.compact .state.ping { top: 8px; font-size: 22px; }
+#wg.tiny .state.ping { top: 6px; font-size: 19px; }
