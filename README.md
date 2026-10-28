@@ -135,10 +135,20 @@ stays black. Both files are gitignored, and they're packaged into the app, so ke
 
 [`routerdash/`](routerdash/) is a second, separate app: a full-screen status board for an OpenWrt
 router. Every 5 seconds it fetches a read-only JSON endpoint on the router (`tv-status`, a CGI that
-must send `Access-Control-Allow-Origin: *`) and shows WAN and WAN6, CPU load and temperature,
-memory, connections, DHCP clients, WAN throughput, Tailscale and each WireGuard tunnel, with green,
-amber and red markers. Back returns to the launcher. Set the URL and thresholds in
-[`routerdash/config.js`](routerdash/config.js), then:
+must send `Access-Control-Allow-Origin: *`) and shows:
+
+- WAN and WAN6 (uptime, ping), CPU usage with the 1, 5 and 15 minute load averages, memory,
+  connections and DHCP clients;
+- WAN throughput, each physical port (link speed and live rates) and each active Wi-Fi network
+  (band, channel, clients);
+- every WireGuard tunnel, laid out to compare traffic: live rates, a bar against the busiest tunnel,
+  a graph on one shared scale, and handshake age and ping in small print. Tiles shrink to fit past
+  ten tunnels.
+
+A bar on the left of each card rises and turns from green to red with load or poor health: CPU
+usage, memory, connections, ping, and traffic against the bandwidth qosify is actually shaping to,
+read live, so changing qosify needs no change here. Back returns to the launcher. Set the URL and
+thresholds in [`routerdash/config.js`](routerdash/config.js), then:
 
 ```bash
 npx -y -p @webos-tools/cli ares-package routerdash -o build
