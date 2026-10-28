@@ -131,6 +131,22 @@ Changing `dockApps` resets an order arranged on the TV.
 wins if both are there. It's shown darkened behind everything; without either file the background
 stays black. Both files are gitignored, and they're packaged into the app, so keep the video small.
 
+## Router dashboard
+
+[`routerdash/`](routerdash/) is a second, separate app: a full-screen status board for an OpenWrt
+router. Every 5 seconds it fetches a read-only JSON endpoint on the router (`tv-status`, a CGI that
+must send `Access-Control-Allow-Origin: *`) and shows WAN and WAN6, CPU load and temperature,
+memory, connections, DHCP clients, WAN throughput, Tailscale and each WireGuard tunnel, with green,
+amber and red markers. Back returns to the launcher. Set the URL and thresholds in
+[`routerdash/config.js`](routerdash/config.js), then:
+
+```bash
+npx -y -p @webos-tools/cli ares-package routerdash -o build
+npx -y -p @webos-tools/cli ares-install -d lgtv build/com.jammy.routerdash_1.0.0_all.ipk
+```
+
+Run `sync-apps.py` again afterwards so the launcher gets a tile for it.
+
 ## Cleaning up LG's home
 
 For when you do land on it. Names vary a little by webOS version:

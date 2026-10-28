@@ -1,0 +1,149 @@
+/* Same look as the launcher: black, white text, soft dark cards. Laid out for 1920x1080. */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', 'Noto Sans', sans-serif;
+  cursor: default;
+}
+
+body {
+  background: radial-gradient(ellipse at 20% 0%, #1c3d5a 0%, rgba(0, 0, 0, 0) 60%), #000;
+}
+
+/* ---- header ---------------------------------------------------------------------------------- */
+
+header {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+#host { font-size: 64px; font-weight: 300; letter-spacing: -0.01em; }
+
+.pill {
+  display: inline-block;
+  margin-left: 24px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 24px;
+  vertical-align: 14px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.pill:empty { display: none; }
+
+#right { font-size: 30px; color: rgba(255, 255, 255, 0.6); }
+#status { margin-right: 32px; }
+#status.bad { color: #ff453a; }
+#clock { color: #fff; font-size: 40px; font-weight: 300; }
+
+/* ---- cards ----------------------------------------------------------------------------------- */
+
+.card {
+  position: relative;
+  background: rgba(28, 28, 30, 0.92);
+  border-radius: 24px;
+  padding: 22px 28px;
+  overflow: hidden;
+  transition: opacity 300ms ease;
+}
+
+/* Status stripe on the left edge. */
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.card.ok::before { background: #30d158; }
+.card.warn::before { background: #ff9f0a; }
+.card.bad::before { background: #ff453a; }
+.card.na { opacity: 0.45; }
+
+body.stale .card { opacity: 0.35; }
+
+.label {
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.value { font-size: 56px; font-weight: 300; margin-top: 8px; white-space: nowrap; }
+.sub { font-size: 20px; color: rgba(255, 255, 255, 0.6); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.bad .value { color: #ff6b61; }
+.card.warn .value { color: #ffb340; }
+
+#cards {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 170px;
+  height: 190px;
+  display: flex;
+  gap: 24px;
+}
+#cards .card { flex: 1; }
+
+#middle {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 380px;
+  height: 230px;
+  display: flex;
+  gap: 24px;
+}
+#cGraph { flex: 2.2; }
+#cTs { flex: 1; }
+#cTs .value { font-size: 64px; margin-top: 24px; }
+
+#wanDev { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
+#rates { position: absolute; right: 28px; top: 16px; font-size: 30px; }
+#rates span { margin-left: 32px; }
+.down { color: #64d2ff; }
+.up { color: #bf5af2; }
+#graph { position: absolute; left: 28px; bottom: 20px; }
+
+/* ---- WireGuard ------------------------------------------------------------------------------- */
+
+.sectionLabel {
+  position: absolute;
+  left: 100px;
+  top: 630px;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+#wg {
+  position: absolute;
+  left: 100px;
+  right: 100px;
+  top: 666px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+/* Traffic first: rates and a graph on one scale shared by every tunnel; state is the small print. */
+#wg .card { height: 178px; padding: 14px 24px; }
+#wg .name { font-size: 26px; }
+#wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
+#wg .card.bad .state { color: #ff6b61; }
+#wg .wgRates { font-size: 25px; margin-top: 6px; white-space: nowrap; }
+#wg .wgRates .up { margin-left: 18px; }
+#wg .share { display: flex; height: 8px; margin-top: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+#wg .share i.down { background: #64d2ff; }
+#wg .share i.up { background: #bf5af2; }
+#wg canvas { display: block; margin-top: 6px; }
+#wg .small { font-size: 16px; color: rgba(255, 255, 255, 0.45); margin-top: 6px; white-space: nowrap; }

@@ -1,0 +1,15 @@
+{
+  "id": "com.jammy.routerdash",
+  "version": "1.0.0",
+  "vendor": "webos-vibehack",
+  "type": "web",
+  "main": "index.html",
+  "title": "Router",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#000000",
+  "iconColor": "#1c3d5a",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "requiredACG": ["application.launcher"]
+}
