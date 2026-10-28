@@ -174,6 +174,7 @@
 
     renderPorts(d);
     renderWifi(d);
+    renderTop(d);
     renderWg(d, sub);
     renderRates(d);
   }
@@ -218,6 +219,37 @@
     });
     var bad = ports.some(function (p) { return p.role === 'wan' && !p.up; });
     gauge($('cPorts'), ports.length ? (bad ? 'bad' : 'ok') : '', null);
+  }
+
+  /** The busiest devices right now (top_hosts, already sorted by the router), each with a bar
+   *  against the busiest one: blue for down, purple for up. */
+  function renderTop(d) {
+    var hosts = (d.top_hosts || []).slice(0, 10), box = $('cTop').querySelector('.rows');
+    $('topInfo').textContent = d.top_hosts ? 'live' : '';
+    gauge($('cTop'), hosts.length ? 'ok' : '', null);
+    if (!hosts.length) {
+      box.innerHTML = '<div class="empty">' + (d.top_hosts === undefined ? 'Not reported by the router'
+        : d.top_hosts === null ? 'Measuring…' : 'No traffic') + '</div>';
+      return;
+    }
+    if (box.querySelector('.empty')) box.innerHTML = '';
+    var top = 1;
+    hosts.forEach(function (x) { top = Math.max(top, (x.down_bps || 0) + (x.up_bps || 0)); });
+    while (box.children.length > hosts.length) box.removeChild(box.lastChild);
+    hosts.forEach(function (x, i) {
+      var row = box.children[i];
+      if (!row) {
+        row = document.createElement('div');
+        row.className = 'host';
+        row.innerHTML = '<span class="n"></span><span class="b"><i class="down"></i><i class="up"></i></span><span class="r"></span>';
+        box.appendChild(row);
+      }
+      var down = x.down_bps || 0, up = x.up_bps || 0;
+      row.children[0].textContent = x.name || x.ip || '?';
+      row.children[1].children[0].style.width = down / top * 100 + '%';
+      row.children[1].children[1].style.width = up / top * 100 + '%';
+      row.children[2].textContent = rate((down + up) / 8);   // rate() takes bytes per second
+    });
   }
 
   function bandName(b) { return b === '2g' ? '2.4G' : b === '5g' ? '5G' : b === '6g' ? '6G' : (b || ''); }
