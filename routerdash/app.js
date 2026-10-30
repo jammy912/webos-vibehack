@@ -357,10 +357,10 @@
       if (!el) {
         el = document.createElement('div');
         el.innerHTML = '<div class="name"><span class="nm"></span></div><div class="state"></div>' +
-          '<div class="wgRates"><span class="down"></span><span class="up"></span></div>' +
+          '<div class="wgRates"><span class="tags"></span><span class="down"></span><span class="up"></span></div>' +
           '<div class="share"><i class="down"></i><i class="up"></i></div>' +
           '<canvas width="280" height="36"></canvas>' +
-          '<div class="small"><span class="tags"></span><span class="txt"></span></div>';
+          '<div class="small"></div>';
         box.appendChild(el);
       }
       var state, text;
@@ -383,15 +383,19 @@
       el.querySelector('.nm').textContent = label || w.name;
       // PBR and DBR tags: shown only when the tunnel carries that kind of routing, coloured by the
       // router's health check (ok, down = fell back to WAN, locked = flap lock, unchecked).
-      var tags = el.querySelector('.tags');
+      // A flap lock pauses the tunnel's routing until `until`: the tag says so, the small print says how long.
+      var tags = el.querySelector('.tags'), until = null, paused = false;
       tags.innerHTML = '';
       [['PBR', w.pbr], ['DBR', w.dbr]].forEach(function (t) {
         if (!t[1]) return;
-        var s = document.createElement('span');
+        var s = document.createElement('span'), locked = t[1].state === 'locked';
         s.className = 'tag ' + (t[1].state || 'unchecked');
-        s.textContent = t[0];
+        s.textContent = t[0] + (locked ? ' 暫停' : '');
         tags.appendChild(s);
+        if (locked) paused = true;
+        if (locked && typeof t[1].until === 'number') until = Math.max(until || 0, t[1].until);
       });
+      el.querySelector('.name').classList.toggle('paused', paused);   // the name turns the lock's amber too
       // Top right: the ping, readable from the sofa, when the tunnel is up and measured; otherwise the
       // state (Down, No handshake, Standby). Up and the handshake age move to the small print.
       var corner = el.querySelector('.state');
@@ -402,8 +406,15 @@
       el.querySelector('.wgRates .up').textContent = '↑ ' + (h ? rate(h.up) : '-');
       el.querySelector('.share .down').style.width = (h ? h.down / busiest * 100 : 0) + '%';
       el.querySelector('.share .up').style.width = (h ? h.up / busiest * 100 : 0) + '%';
-      el.querySelector('.small .txt').textContent = (label ? w.name + ' · ' : '') +
+      var small = el.querySelector('.small');
+      small.textContent = (label ? w.name + ' · ' : '') +
         (w.up ? text + ' · total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '');
+      if (until !== null) {
+        var pause = document.createElement('span');
+        pause.className = 'paused';
+        pause.textContent = '暫停中' + (until > d.ts ? ' 剩 ' + duration(until - d.ts) : '') + ' · ';
+        small.insertBefore(pause, small.firstChild);
+      }
       drawLines(el.querySelector('canvas'), hist, max, 3);
     });
   }
