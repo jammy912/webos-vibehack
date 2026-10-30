@@ -46,6 +46,7 @@ header {
   background: rgba(255, 255, 255, 0.14);
 }
 .pill:empty { display: none; }
+#uptime { margin-left: 22px; font-size: 26px; vertical-align: 16px; color: rgba(255, 255, 255, 0.55); }
 
 #right { font-size: 30px; color: rgba(255, 255, 255, 0.6); }
 #status { margin-right: 32px; }

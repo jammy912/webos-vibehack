@@ -136,6 +136,7 @@
     if (d.gas_url) gasUrl = d.gas_url;
     $('host').textContent = d.host || 'Router';
     $('role').textContent = d.role === 'main' ? 'Main gateway' : d.role === 'sub' ? 'Secondary' : '';
+    $('uptime').textContent = typeof d.uptime === 'number' ? 'up ' + duration(d.uptime) : '';
     var sub = d.role === 'sub';
 
     var wp = (d.ping || []).filter(function (p) { return p.iface === 'wan'; })[0];
