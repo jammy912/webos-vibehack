@@ -12,7 +12,11 @@
   var gasUrl = null;                   // the route editor's Apps Script URL, handed out by tv-status for the token
   var LABELS_EVERY = 10 * 60 * 1000;   // re-read the Sheet's tunnel names this often
   var wgLabels = {};                   // tunnel → the Sheet's name for it ("wg0" → "中華電信VPN"), kept across restarts
-  try { wgLabels = JSON.parse(localStorage.getItem('wgLabels')) || {}; } catch (e) { }
+  var wgOrder = [];                    // the tunnels in the Sheet's order (the route editor's menu), cards follow it
+  try {
+    wgLabels = JSON.parse(localStorage.getItem('wgLabels')) || {};
+    wgOrder = JSON.parse(localStorage.getItem('wgOrder')) || [];
+  } catch (e) { }
   var labelsAt = 0;
   var STALE_AFTER = 3;          // missed polls before the whole screen dims
   var $ = function (id) { return document.getElementById(id); };
@@ -320,8 +324,16 @@
     box.className = rows >= 4 ? 'compact tiny' : rows === 3 ? 'compact' : '';
   }
 
+  /** The tunnels in the Sheet's order; ones the Sheet doesn't list (dial-in servers, spares) follow in the router's order. */
+  function sortWg(list) {
+    function rank(w, i) { var r = wgOrder.indexOf(w.name); return r < 0 ? wgOrder.length + i : r; }
+    return list.map(function (w, i) { return { w: w, r: rank(w, i) }; })
+      .sort(function (a, b) { return a.r - b.r; })
+      .map(function (x) { return x.w; });
+  }
+
   function renderWg(d, sub) {
-    var list = d.wg || [], prev = {};
+    var list = sortWg(d.wg || []), prev = {};
     if (last && last.wg) last.wg.forEach(function (w) { prev[w.name] = w; });
     list.forEach(function (w) {
       var p = prev[w.name], hist = wgHistory[w.name] || (wgHistory[w.name] = []);
@@ -529,9 +541,16 @@
   /** Keeps the Sheet's tunnel names (the route editor's options) for the WireGuard cards. */
   function setLabels(options) {
     wgLabels = {};
-    options.forEach(function (o) { if (o.wg && o.label && o.wg !== o.label) wgLabels[o.wg] = o.label; });
+    wgOrder = [];
+    options.forEach(function (o) {
+      if (o.wg && o.label && o.wg !== o.label) wgLabels[o.wg] = o.label;
+      if (o.wg) wgOrder.push(o.wg);
+    });
     labelsAt = Date.now();
-    try { localStorage.setItem('wgLabels', JSON.stringify(wgLabels)); } catch (e) { }
+    try {
+      localStorage.setItem('wgLabels', JSON.stringify(wgLabels));
+      localStorage.setItem('wgOrder', JSON.stringify(wgOrder));
+    } catch (e) { }
   }
 
   function refreshLabels() {
