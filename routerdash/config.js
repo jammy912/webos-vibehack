@@ -22,6 +22,9 @@ window.CONFIG = {
   // Throughput history kept for the graph (72 x 5 s = 6 minutes).
   historyPoints: 72,
 
+  // Tunnels left out of the route editor's menu: the home connection itself, and the dial-in server.
+  routeHide: ['wan', 'wg1'],
+
   // The route editor's Apps Script calls can be slow to start: wait this long (ms).
   gasTimeout: 15000,
 

@@ -176,11 +176,12 @@ body.stale .card { opacity: 0.35; }
 #wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
 #wg .state.ping { top: 12px; font-size: 26px; color: #fff; }
 #wg .card.bad .state { color: #ff6b61; }
-/* A dead tunnel (Down, No handshake) fades like a standby one, all but its state, large and red. A slow
-   but working tunnel keeps full colour with the red bar. */
-#wg .card.bad > :not(.state), #wg .card.bad::before, #wg .card.bad::after { opacity: 0.45; }
-#wg .card.bad .state { top: 12px; font-size: 24px; font-weight: 600; }
-#wg .card.bad .name { padding-right: 170px; }
+/* A dead tunnel (Down, No handshake) fades like a standby one, all but its state: large and red, in place
+   of the rates (app.js moves it there). A slow but working tunnel keeps full colour with the red bar. */
+#wg .card.bad .name, #wg .card.bad .tags, #wg .card.bad .share, #wg .card.bad canvas, #wg .card.bad .small,
+#wg .card.bad::before, #wg .card.bad::after { opacity: 0.45; }
+#wg .card.bad .wgRates .down, #wg .card.bad .wgRates .up { display: none; }
+#wg .card.bad .state { position: static; font-size: 24px; line-height: 29px; font-weight: 600; }
 #wg .card.bad::before { background: rgba(255, 255, 255, 0.2); }   /* the bar goes grey: the red text says it all */
 #wg .wgRates { display: flex; align-items: center; font-size: 24px; margin-top: 6px; white-space: nowrap; }
 #wg .wgRates .up { margin-left: 14px; }
@@ -261,10 +262,10 @@ body.stale .card { opacity: 0.35; }
 #wg .wgRates .tags:empty { display: none; }
 #wg .tag { padding: 0 4px; border-radius: 4px; font-size: 11px; line-height: 12px; letter-spacing: 0.04em; text-align: center; border: 1.5px solid; }
 #wg.tiny .tags { display: none; }
-#wg .tag.ok { color: #30d158; border-color: rgba(48, 209, 88, 0.6); }
-#wg .tag.down { color: #ff6b61; border-color: rgba(255, 69, 58, 0.7); }
-#wg .tag.locked { color: #ffb340; border-color: rgba(255, 159, 10, 0.7); }
-#wg .tag.unchecked { color: rgba(255, 255, 255, 0.45); border-color: rgba(255, 255, 255, 0.25); }
+#wg .tag.tag-ok { color: #30d158; border-color: rgba(48, 209, 88, 0.6); }
+#wg .tag.tag-down { color: #ff6b61; border-color: rgba(255, 69, 58, 0.7); }
+#wg .tag.tag-locked { color: #ffb340; border-color: rgba(255, 159, 10, 0.7); }
+#wg .tag.tag-unchecked { color: rgba(255, 255, 255, 0.45); border-color: rgba(255, 255, 255, 0.25); }
 #wg .small .paused, #wg .name.paused { color: #ffb340; }
 /* A pause sign before a locked tunnel's name, drawn in CSS: the TV's fonts may not have ⏸. */
 #wg .name.paused::before { content: ''; display: inline-block; width: 4px; height: 16px; margin-right: 8px; border-left: 5px solid; border-right: 5px solid; vertical-align: -1px; }

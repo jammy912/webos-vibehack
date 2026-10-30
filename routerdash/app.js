@@ -389,7 +389,7 @@
       [['PBR', w.pbr], ['DBR', w.dbr]].forEach(function (t) {
         if (!t[1]) return;
         var s = document.createElement('span'), locked = t[1].state === 'locked';
-        s.className = 'tag ' + (t[1].state || 'unchecked');
+        s.className = 'tag tag-' + (t[1].state || 'unchecked');   // prefixed: .down is the rates' class
         s.textContent = t[0] + (locked ? ' 暫停' : '');
         tags.appendChild(s);
         if (locked) paused = true;
@@ -401,6 +401,12 @@
       var corner = el.querySelector('.state');
       corner.className = 'state' + (ping ? ' ping' : '');
       corner.textContent = ping || shortText;
+      // A dead tunnel's state takes the place of its rates (meaningless now), leaving the whole top line
+      // to the name; otherwise the name gives way to the corner's ping or state.
+      var rates = el.querySelector('.wgRates'), dead = state === 'bad';
+      if (dead && corner.parentNode !== rates) rates.appendChild(corner);
+      if (!dead && corner.parentNode !== el) el.insertBefore(corner, rates);
+      el.querySelector('.name').style.paddingRight = dead ? '0' : (corner.offsetWidth + 14) + 'px';
       corner.style.color = ping ? pingColor(pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : '';
       el.querySelector('.wgRates .down').textContent = '↓ ' + (h ? rate(h.down) : '-');
       el.querySelector('.wgRates .up').textContent = '↑ ' + (h ? rate(h.up) : '-');
@@ -594,11 +600,15 @@
       var keep = routes.hosts[routes.sel] ? routes.hosts[routes.sel].ip : null;
       routes.hosts = res.hosts || [];
       if (res.options) {
-        routes.options = [DEFAULT].concat(res.options);   // labels, in the Sheet's own order
-        setLabels(res.options);
+        routes.options = [DEFAULT].concat(res.options.filter(function (o) {   // labels, in the Sheet's own order
+          return (CONFIG.routeHide || []).indexOf(o.wg) < 0;
+        }));
+        setLabels(res.options);   // the cards still name the hidden ones
       } else {
         // The older web app lists bare interface names, and "default" instead of an enabled flag.
-        routes.options = [DEFAULT].concat((res.allowed || []).map(function (wg) { return { label: wg, wg: wg }; }));
+        routes.options = [DEFAULT].concat((res.allowed || []).filter(function (wg) {
+          return (CONFIG.routeHide || []).indexOf(wg) < 0;
+        }).map(function (wg) { return { label: wg, wg: wg }; }));
         routes.hosts.forEach(function (h) {
           if (h.enabled === undefined) { h.enabled = h.wg !== 'default'; if (!h.label && h.enabled) h.label = h.wg; }
         });
