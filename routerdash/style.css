@@ -176,6 +176,12 @@ body.stale .card { opacity: 0.35; }
 #wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
 #wg .state.ping { top: 12px; font-size: 26px; color: #fff; }
 #wg .card.bad .state { color: #ff6b61; }
+/* A dead tunnel (Down, No handshake) fades like a standby one, all but its state, large and red. A slow
+   but working tunnel keeps full colour with the red bar. */
+#wg .card.bad > :not(.state), #wg .card.bad::before, #wg .card.bad::after { opacity: 0.45; }
+#wg .card.bad .state { top: 12px; font-size: 24px; font-weight: 600; }
+#wg .card.bad .name { padding-right: 170px; }
+#wg .card.bad::before { background: rgba(255, 255, 255, 0.2); }   /* the bar goes grey: the red text says it all */
 #wg .wgRates { display: flex; align-items: center; font-size: 24px; margin-top: 6px; white-space: nowrap; }
 #wg .wgRates .up { margin-left: 14px; }
 #wg .share { display: flex; height: 8px; margin-top: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }

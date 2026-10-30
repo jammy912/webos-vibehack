@@ -521,6 +521,7 @@
   // the row and keeps its tunnel for later.
 
   var DEFAULT = { label: 'default', wg: 'default' };
+  var APPLY_MS = 120000;   // "applying…" after a save: the router syncs the Sheet every minute
   var routes = { open: false, hosts: [], options: [], sel: 0, picking: false, choice: 0, busy: false };
   var GAS_ERRORS = {
     forbidden: 'Token rejected by the Apps Script (wrong token, or the new version isn’t deployed)',
@@ -624,7 +625,7 @@
       row.children[0].textContent = h.name || '';
       row.children[1].textContent = h.ip;
       row.children[2].textContent = tunnelText(h);
-      row.children[3].textContent = h.pending && Date.now() - h.pending < 120000 ? 'applying…' : '';
+      row.children[3].textContent = h.pending && Date.now() - h.pending < APPLY_MS ? 'applying…' : '';
       row.addEventListener('click', function () {
         if (routes.busy) return;
         routes.sel = i;
@@ -703,6 +704,8 @@
         else { h.label = opt.label; h.wg = opt.wg; }   // the older web app answers to: "<interface>"
         h.enabled = opt === DEFAULT ? false : res.enabled !== false;
         h.pending = Date.now();
+        // Nothing else redraws an idle list: clear "applying…" when its time is up.
+        setTimeout(function () { if (routes.open) drawRoutes(); }, APPLY_MS + 100);
         routesStatus((h.name || h.ip) + ': ' + before + ' → ' + tunnelText(h) +
           ' · the router applies it within about a minute (not 01:00-06:59)');
       } else {
