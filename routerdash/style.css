@@ -171,7 +171,8 @@ body.stale .card { opacity: 0.35; }
 }
 /* Traffic first: rates and a graph on one scale shared by every tunnel; state is the small print. */
 #wg .card { padding: 14px 24px; }
-#wg .name { font-size: 26px; }
+/* The Sheet's tunnel names can be long: cut them (…) short of the corner's ping. */
+#wg .name { font-size: 21px; line-height: 31px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 84px; }
 #wg .state { position: absolute; right: 22px; top: 20px; font-size: 17px; color: rgba(255, 255, 255, 0.5); }
 #wg .state.ping { top: 12px; font-size: 26px; color: #fff; }
 #wg .card.bad .state { color: #ff6b61; }
@@ -187,12 +188,12 @@ body.stale .card { opacity: 0.35; }
    then the bar. */
 #wg.compact .card { padding: 10px 20px; }
 #wg.compact canvas, #wg.compact .small { display: none; }
-#wg.compact .name { font-size: 23px; }
+#wg.compact .name { font-size: 20px; }
 #wg.compact .state { top: 14px; }
 #wg.compact .wgRates { font-size: 22px; margin-top: 4px; }
 #wg.tiny .share { display: none; }
 #wg.tiny .card { padding: 8px 18px; }
-#wg.tiny .name { font-size: 20px; }
+#wg.tiny .name { font-size: 18px; }
 #wg.tiny .state { top: 10px; font-size: 15px; }
 #wg.tiny .wgRates { font-size: 19px; margin-top: 2px; }
 #wg.compact .state.ping { top: 8px; font-size: 22px; }
@@ -248,12 +249,10 @@ body.stale .card { opacity: 0.35; }
 #routesMenu .opt.current { color: #64d2ff; }
 #routesMenu .opt.sel { background: rgba(255, 255, 255, 0.92); color: #000; }
 
-/* PBR / DBR tags after a tunnel's name, coloured by the router's health check. */
-#wg .name .tags { margin-left: 10px; }
-#wg .tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; font-size: 14px; letter-spacing: 0.04em; vertical-align: 4px; border: 1.5px solid; }
+/* PBR / DBR tags leading the small print, coloured by the router's health check. */
+#wg .small { overflow: hidden; text-overflow: ellipsis; }
+#wg .tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 5px; font-size: 13px; line-height: 17px; letter-spacing: 0.04em; vertical-align: 1px; border: 1.5px solid; }
 #wg .tag.ok { color: #30d158; border-color: rgba(48, 209, 88, 0.6); }
 #wg .tag.down { color: #ff6b61; border-color: rgba(255, 69, 58, 0.7); }
 #wg .tag.locked { color: #ffb340; border-color: rgba(255, 159, 10, 0.7); }
 #wg .tag.unchecked { color: rgba(255, 255, 255, 0.45); border-color: rgba(255, 255, 255, 0.25); }
-#wg.compact .tag { font-size: 12px; padding: 0 5px; vertical-align: 3px; }
-#wg.tiny .tags { display: none; }

@@ -10,6 +10,10 @@
   var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 461, ESC: 27 };
   var TOKEN = window.TV_TOKEN || '';   // from token.js (gitignored); unlocks the route editor
   var gasUrl = null;                   // the route editor's Apps Script URL, handed out by tv-status for the token
+  var LABELS_EVERY = 10 * 60 * 1000;   // re-read the Sheet's tunnel names this often
+  var wgLabels = {};                   // tunnel → the Sheet's name for it ("wg0" → "中華電信VPN"), kept across restarts
+  try { wgLabels = JSON.parse(localStorage.getItem('wgLabels')) || {}; } catch (e) { }
+  var labelsAt = 0;
   var STALE_AFTER = 3;          // missed polls before the whole screen dims
   var $ = function (id) { return document.getElementById(id); };
 
@@ -134,6 +138,7 @@
 
   function render(d) {
     if (d.gas_url) gasUrl = d.gas_url;
+    refreshLabels();
     $('host').textContent = d.host || 'Router';
     $('role').textContent = d.role === 'main' ? 'Main gateway' : d.role === 'sub' ? 'Secondary' : '';
     $('uptime').textContent = typeof d.uptime === 'number' ? 'up ' + duration(d.uptime) : '';
@@ -339,11 +344,11 @@
       var el = box.children[i];
       if (!el) {
         el = document.createElement('div');
-        el.innerHTML = '<div class="name"><span class="nm"></span><span class="tags"></span></div><div class="state"></div>' +
+        el.innerHTML = '<div class="name"><span class="nm"></span></div><div class="state"></div>' +
           '<div class="wgRates"><span class="down"></span><span class="up"></span></div>' +
           '<div class="share"><i class="down"></i><i class="up"></i></div>' +
           '<canvas width="280" height="36"></canvas>' +
-          '<div class="small"></div>';
+          '<div class="small"><span class="tags"></span><span class="txt"></span></div>';
         box.appendChild(el);
       }
       var state, text;
@@ -361,7 +366,9 @@
       el.className = 'card ' + state;
       // Bar: the tunnel's share of its qosify limit, or its ping health, whichever is worse.
       gauge(el, state, w.up ? worst(trafficLevel(d, w.name, h), pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : null);
-      el.querySelector('.nm').textContent = w.name;
+      // The Sheet's name when there is one; the interface then leads the small print.
+      var label = wgLabels[w.name];
+      el.querySelector('.nm').textContent = label || w.name;
       // PBR and DBR tags: shown only when the tunnel carries that kind of routing, coloured by the
       // router's health check (ok, down = fell back to WAN, locked = flap lock, unchecked).
       var tags = el.querySelector('.tags');
@@ -383,7 +390,8 @@
       el.querySelector('.wgRates .up').textContent = '↑ ' + (h ? rate(h.up) : '-');
       el.querySelector('.share .down').style.width = (h ? h.down / busiest * 100 : 0) + '%';
       el.querySelector('.share .up').style.width = (h ? h.up / busiest * 100 : 0) + '%';
-      el.querySelector('.small').textContent = w.up ? text + ' · total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '';
+      el.querySelector('.small .txt').textContent = (label ? w.name + ' · ' : '') +
+        (w.up ? text + ' · total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '');
       drawLines(el.querySelector('canvas'), hist, max, 3);
     });
   }
@@ -518,6 +526,20 @@
     x.send();
   }
 
+  /** Keeps the Sheet's tunnel names (the route editor's options) for the WireGuard cards. */
+  function setLabels(options) {
+    wgLabels = {};
+    options.forEach(function (o) { if (o.wg && o.label && o.wg !== o.label) wgLabels[o.wg] = o.label; });
+    labelsAt = Date.now();
+    try { localStorage.setItem('wgLabels', JSON.stringify(wgLabels)); } catch (e) { }
+  }
+
+  function refreshLabels() {
+    if (!gasUrl || !TOKEN || Date.now() - labelsAt < LABELS_EVERY) return;
+    labelsAt = Date.now();   // also on failure: try again next round, not every poll
+    gas({ action: 'TvList' }, function (res) { if (res.ok && res.options) setLabels(res.options); });
+  }
+
   function routesStatus(text, bad) {
     var s = $('routesStatus');
     s.textContent = text;
@@ -542,6 +564,7 @@
       routes.hosts = res.hosts || [];
       if (res.options) {
         routes.options = [DEFAULT].concat(res.options);   // labels, in the Sheet's own order
+        setLabels(res.options);
       } else {
         // The older web app lists bare interface names, and "default" instead of an enabled flag.
         routes.options = [DEFAULT].concat((res.allowed || []).map(function (wg) { return { label: wg, wg: wg }; }));
