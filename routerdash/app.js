@@ -338,7 +338,7 @@
       var el = box.children[i];
       if (!el) {
         el = document.createElement('div');
-        el.innerHTML = '<div class="name"></div><div class="state"></div>' +
+        el.innerHTML = '<div class="name"><span class="nm"></span><span class="tags"></span></div><div class="state"></div>' +
           '<div class="wgRates"><span class="down"></span><span class="up"></span></div>' +
           '<div class="share"><i class="down"></i><i class="up"></i></div>' +
           '<canvas width="280" height="36"></canvas>' +
@@ -352,6 +352,7 @@
       else if (dialIn) { state = w.peers_active ? 'ok' : 'na'; text = w.peers_active ? w.peers_active + ' connected' : 'Standby'; }
       else if (w.peers > 0 && stale) { state = 'bad'; text = 'No handshake'; }
       else { state = 'ok'; text = 'Up'; }
+      var shortText = text;   // the corner keeps it short; the handshake age goes to the small print
       if (w.up && w.handshake_age !== null && w.handshake_age !== undefined) text += ' · ' + duration(w.handshake_age);
 
       var hist = wgHistory[w.name], h = hist[hist.length - 1];
@@ -359,18 +360,29 @@
       el.className = 'card ' + state;
       // Bar: the tunnel's share of its qosify limit, or its ping health, whichever is worse.
       gauge(el, state, w.up ? worst(trafficLevel(d, w.name, h), pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : null);
-      el.querySelector('.name').textContent = w.name;
+      el.querySelector('.nm').textContent = w.name;
+      // PBR and DBR tags: shown only when the tunnel carries that kind of routing, coloured by the
+      // router's health check (ok, down = fell back to WAN, locked = flap lock, unchecked).
+      var tags = el.querySelector('.tags');
+      tags.innerHTML = '';
+      [['PBR', w.pbr], ['DBR', w.dbr]].forEach(function (t) {
+        if (!t[1]) return;
+        var s = document.createElement('span');
+        s.className = 'tag ' + (t[1].state || 'unchecked');
+        s.textContent = t[0];
+        tags.appendChild(s);
+      });
       // Top right: the ping, readable from the sofa, when the tunnel is up and measured; otherwise the
       // state (Down, No handshake, Standby). Up and the handshake age move to the small print.
       var corner = el.querySelector('.state');
       corner.className = 'state' + (ping ? ' ping' : '');
-      corner.textContent = ping || text;
+      corner.textContent = ping || shortText;
       corner.style.color = ping ? pingColor(pingLevel(w.ping_ms, w.ping_loss, w.ping_ts, d.ts)) : '';
       el.querySelector('.wgRates .down').textContent = '↓ ' + (h ? rate(h.down) : '-');
       el.querySelector('.wgRates .up').textContent = '↑ ' + (h ? rate(h.up) : '-');
       el.querySelector('.share .down').style.width = (h ? h.down / busiest * 100 : 0) + '%';
       el.querySelector('.share .up').style.width = (h ? h.up / busiest * 100 : 0) + '%';
-      el.querySelector('.small').textContent = w.up ? (ping ? text + ' · ' : '') + 'total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '';
+      el.querySelector('.small').textContent = w.up ? text + ' · total ↓ ' + bytes(w.rx_bytes) + '  ↑ ' + bytes(w.tx_bytes) : '';
       drawLines(el.querySelector('canvas'), hist, max, 3);
     });
   }

@@ -240,3 +240,13 @@ body.stale .card { opacity: 0.35; }
 #routesMenu .opt { height: 44px; line-height: 44px; padding: 0 14px; border-radius: 10px; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #routesMenu .opt.current { color: #64d2ff; }
 #routesMenu .opt.sel { background: rgba(255, 255, 255, 0.92); color: #000; }
+
+/* PBR / DBR tags after a tunnel's name, coloured by the router's health check. */
+#wg .name .tags { margin-left: 10px; }
+#wg .tag { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 6px; font-size: 14px; letter-spacing: 0.04em; vertical-align: 4px; border: 1.5px solid; }
+#wg .tag.ok { color: #30d158; border-color: rgba(48, 209, 88, 0.6); }
+#wg .tag.down { color: #ff6b61; border-color: rgba(255, 69, 58, 0.7); }
+#wg .tag.locked { color: #ffb340; border-color: rgba(255, 159, 10, 0.7); }
+#wg .tag.unchecked { color: rgba(255, 255, 255, 0.45); border-color: rgba(255, 255, 255, 0.25); }
+#wg.compact .tag { font-size: 12px; padding: 0 5px; vertical-align: 3px; }
+#wg.tiny .tags { display: none; }
