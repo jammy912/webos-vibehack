@@ -397,7 +397,10 @@
     gauge($('cGraph'), lvl === null ? '' : 'ok', lvl);
     var max = 1;
     history.forEach(function (p) { max = Math.max(max, p.down, p.up); });
-    drawLines($('graph'), history, max, 4);
+    // Fit the graph to its card, whose width comes from the flex layout.
+    var graph = $('graph'), fit = $('cGraph').clientWidth - 56;
+    if (fit > 100 && graph.width !== fit) graph.width = fit;
+    drawLines(graph, history, max, 4);
     // The scale goes under the title: drawn on the graph, the lines run over it.
     $('wanDev').textContent = d.wan_dev || '';
     $('scale').textContent = history.length > 1 ? 'scale ' + rate(max) : '';
@@ -656,6 +659,14 @@
   }
 
   // ---- keys and lifecycle --------------------------------------------------------------------
+
+  /** Scales the 1920x1080 screen to fit the window, keeping its shape, centred (1 on the TV). */
+  function fit() {
+    var w = window.innerWidth, h = window.innerHeight, s = Math.min(w / 1920, h / 1080);
+    document.body.style.transform = 'translate(' + (w - 1920 * s) / 2 + 'px, ' + (h - 1080 * s) / 2 + 'px) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
 
   function goHome() {
     try {
