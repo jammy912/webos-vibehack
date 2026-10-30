@@ -159,6 +159,13 @@ npx -y -p @webos-tools/cli ares-install -d lgtv build/com.jammy.routerdash_1.0.0
 
 Run `sync-apps.py` again afterwards so the launcher gets a tile for it.
 
+**Route editor**: press OK (or click Top 10) to list the devices in the routing Sheet with the
+tunnel each one uses; pick one and choose another tunnel from the menu. Changes go through a Google
+Apps Script web app that edits the Sheet, and the router applies them on its next sync, about a
+minute later. It needs `routerdash/token.js` (gitignored, never commit it) containing
+`window.TV_TOKEN = '<token>';`: the router hands out the Apps Script URL only for that token.
+Without the file the editor stays locked and the rest of the dashboard works as before.
+
 ## Cleaning up LG's home
 
 For when you do land on it. Names vary a little by webOS version:

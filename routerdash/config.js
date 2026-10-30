@@ -1,7 +1,7 @@
 // Router dashboard configuration. Edit, then reinstall (see the README's "Router dashboard").
 window.CONFIG = {
   // The router's tv-status CGI: a read-only JSON endpoint (see routerdash/README.md for the format).
-  url: 'http://192.168.1.1/cgi-bin/tv-status',
+  url: 'http://100.64.0.12/cgi-bin/tv-status',
 
   // Poll every 5 s; a request that takes longer than 3 s counts as failed.
   interval: 5000,
@@ -21,6 +21,9 @@ window.CONFIG = {
 
   // Throughput history kept for the graph (72 x 5 s = 6 minutes).
   historyPoints: 72,
+
+  // The route editor's Apps Script calls can be slow to start: wait this long (ms).
+  gasTimeout: 15000,
 
   // Back opens this app.
   launcher: 'com.gathin.tvhome'

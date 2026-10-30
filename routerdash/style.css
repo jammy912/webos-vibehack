@@ -201,3 +201,42 @@ body.stale .card { opacity: 0.35; }
 #cTop .host .b i.up { background: #bf5af2; }
 #cTop .host .r { width: 92px; text-align: right; color: rgba(255, 255, 255, 0.75); }
 #cTop .empty { font-size: 18px; color: rgba(255, 255, 255, 0.45); margin-top: 6px; }
+
+/* ---- route editor ---------------------------------------------------------------------------- */
+
+#cTop .hint { float: right; text-transform: none; letter-spacing: 0; color: rgba(255, 255, 255, 0.3); font-size: 15px; }
+
+#routes {
+  position: absolute;
+  left: 360px; right: 360px; top: 90px; bottom: 90px;
+  z-index: 10;
+  padding: 26px 34px 70px;
+  border-radius: 28px;
+  background: #16161a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  transition: opacity 200ms ease;
+}
+#routes.hidden { opacity: 0; pointer-events: none; }
+#routesList { position: absolute; left: 34px; right: 34px; top: 74px; bottom: 70px; overflow: hidden; }
+.route { display: flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 10px; font-size: 22px; white-space: nowrap; }
+.route .n { width: 300px; overflow: hidden; text-overflow: ellipsis; }
+.route .ip { width: 190px; color: rgba(255, 255, 255, 0.5); }
+.route .wg { width: 420px; color: #64d2ff; overflow: hidden; text-overflow: ellipsis; }
+.route.plain .wg { color: rgba(255, 255, 255, 0.4); }
+.route .p { flex: 1; text-align: right; font-size: 18px; color: #ffb340; }
+.route.sel { background: rgba(255, 255, 255, 0.12); }
+.route.picking { background: rgba(255, 255, 255, 0.92); color: #000; }
+.route.picking .ip { color: rgba(0, 0, 0, 0.5); }
+.route.picking .wg { color: #0a5fd6; font-weight: 600; }
+#routesStatus { position: absolute; left: 34px; right: 34px; bottom: 24px; font-size: 19px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#routesStatus.bad { color: #ff6b61; }
+/* The tunnel menu: pops up over the list's right side, every choice at once. */
+#routesMenu {
+  position: absolute; right: 50px; top: 90px; width: 420px; max-height: 700px; overflow: hidden;
+  padding: 12px; border-radius: 18px; background: #2a2a30; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+#routesMenu.hidden { display: none; }
+#routesMenu .title { font-size: 18px; color: rgba(255, 255, 255, 0.5); padding: 4px 14px 10px; }
+#routesMenu .opt { height: 44px; line-height: 44px; padding: 0 14px; border-radius: 10px; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#routesMenu .opt.current { color: #64d2ff; }
+#routesMenu .opt.sel { background: rgba(255, 255, 255, 0.92); color: #000; }

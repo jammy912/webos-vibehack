@@ -33,7 +33,7 @@
       <div id="rates"><span class="down" id="rateDown"></span><span class="up" id="rateUp"></span></div>
       <canvas id="graph" width="630" height="160"></canvas>
     </div>
-    <div class="card" id="cTop"><div class="label">Top 10 <span id="topInfo" class="aside"></span></div><div class="rows"></div></div>
+    <div class="card" id="cTop"><div class="label">Top 10 <span id="topInfo" class="aside"></span><span class="hint">OK · routes</span></div><div class="rows"></div></div>
     <div id="side">
       <div class="card list" id="cPorts"><div class="label">Ports</div><div class="rows"></div></div>
       <div class="card list" id="cWifi"><div class="label">Wi-Fi <span id="wifiTotal"></span></div><div class="rows"></div></div>
@@ -43,7 +43,17 @@
   <div class="sectionLabel">WireGuard</div>
   <div id="wg"></div>
 
+  <!-- Route editor: every static host and the tunnel it goes through (OK opens it). -->
+  <div id="routes" class="hidden">
+    <div class="label">Routes <span class="aside">which tunnel each static host uses</span></div>
+    <div id="routesList"></div>
+    <div id="routesMenu" class="hidden"></div>
+    <div id="routesStatus"></div>
+  </div>
+
   <script src="config.js"></script>
+  <!-- token.js (gitignored) sets window.TV_TOKEN; without it the route editor stays locked. -->
+  <script src="token.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

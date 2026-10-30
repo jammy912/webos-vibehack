@@ -10,3 +10,4 @@ app/largeIcon.png
 app/background.jpg
 app/background.mp4
 .DS_Store
+routerdash/token.js

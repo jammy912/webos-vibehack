@@ -7,7 +7,9 @@
 (function () {
   'use strict';
 
-  var KEY = { BACK: 461, ESC: 27 };
+  var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 461, ESC: 27 };
+  var TOKEN = window.TV_TOKEN || '';   // from token.js (gitignored); unlocks the route editor
+  var gasUrl = null;                   // the route editor's Apps Script URL, handed out by tv-status for the token
   var STALE_AFTER = 3;          // missed polls before the whole screen dims
   var $ = function (id) { return document.getElementById(id); };
 
@@ -131,6 +133,7 @@
   }
 
   function render(d) {
+    if (d.gas_url) gasUrl = d.gas_url;
     $('host').textContent = d.host || 'Router';
     $('role').textContent = d.role === 'main' ? 'Main gateway' : d.role === 'sub' ? 'Secondary' : '';
     var sub = d.role === 'sub';
@@ -422,7 +425,8 @@
       updateStatus();
       if (!document.hidden) timer = setTimeout(poll, CONFIG.interval);
     }
-    x.open('GET', CONFIG.url + (CONFIG.url.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now());
+    x.open('GET', CONFIG.url + (CONFIG.url.indexOf('?') < 0 ? '?' : '&') +
+      (TOKEN ? 'token=' + encodeURIComponent(TOKEN) + '&' : '') + '_=' + Date.now());
     x.timeout = CONFIG.timeout;
     x.onload = function () {
       var d = null;
@@ -460,6 +464,185 @@
     $('clock').textContent = d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2);
   }
 
+  // ---- route editor ---------------------------------------------------------------------------
+  //
+  // OK (or a click on Top 10) lists the devices in the Sheet's PBR_Source with the tunnel each is sent
+  // through. Up/Down picks one; OK (or a click) pops up every tunnel at once, Up/Down and OK (or a
+  // click) choose and save, Back cancels or closes. The Google Sheet decides routing: saving goes through an Apps Script web app that edits the
+  // PBR tab, and the router picks the change up on its next sync, about a minute later (none 01:00-06:59).
+  // Choices are the Sheet's own tunnel labels (its column E drop-down), plus "default", which unticks
+  // the row and keeps its tunnel for later.
+
+  var DEFAULT = { label: 'default', wg: 'default' };
+  var routes = { open: false, hosts: [], options: [], sel: 0, picking: false, choice: 0, busy: false };
+  var GAS_ERRORS = {
+    forbidden: 'Token rejected by the Apps Script (wrong token, or the new version isn’t deployed)',
+    bad_reply: 'Unexpected reply from the Apps Script', not_in_pbr_source: 'Not in the Sheet’s PBR_Source list',
+    bad_tunnel: 'Not one of the Sheet’s tunnels', not_static_host: 'Not a static host',
+    bad_wg: 'Invalid tunnel name', no_free_number: 'No free rule number', busy: 'Busy, try again', network: 'Can’t reach Google',
+    no_gas: 'Route editing is not set up (no token, or the router gave no Apps Script URL)'
+  };
+
+  /** Calls the Apps Script web app with a plain GET (no custom headers: it can't answer a preflight). */
+  function gas(params, cb) {
+    if (!gasUrl || !TOKEN) { cb({ ok: false, error: 'no_gas' }); return; }
+    var q = Object.keys(params).map(function (k) { return k + '=' + encodeURIComponent(params[k]); });
+    q.push('tvtoken=' + encodeURIComponent(TOKEN));
+    var x = new XMLHttpRequest(), done = false;
+    function finish(res) { if (!done) { done = true; cb(res); } }
+    x.open('GET', gasUrl + '?' + q.join('&'));
+    x.timeout = CONFIG.gasTimeout;
+    x.onload = function () {
+      // A web app that rejects the call outright answers plain text ("Forbidden"), not JSON.
+      try { finish(JSON.parse(x.responseText)); } catch (e) {
+        finish({ ok: false, error: /forbidden/i.test(x.responseText) ? 'forbidden' : 'bad_reply' });
+      }
+    };
+    x.onerror = x.ontimeout = function () { finish({ ok: false, error: 'network' }); };
+    x.send();
+  }
+
+  function routesStatus(text, bad) {
+    var s = $('routesStatus');
+    s.textContent = text;
+    s.className = bad ? 'bad' : '';
+  }
+
+  /** "台灣VPN · wg_tw", or "default" when the row is unticked. */
+  function tunnelText(h) {
+    if (h.enabled) return (h.label || h.wg) + (h.wg && h.wg !== h.label ? ' · ' + h.wg : '');
+    return 'default';
+  }
+
+  function openRoutes() {
+    routes.open = true;
+    routes.picking = false;
+    $('routes').classList.remove('hidden');
+    routesStatus('Loading…');
+    gas({ action: 'TvList' }, function (res) {
+      if (!routes.open) return;
+      if (!res.ok) { routesStatus(GAS_ERRORS[res.error] || res.error || 'Failed', true); return; }
+      var keep = routes.hosts[routes.sel] ? routes.hosts[routes.sel].ip : null;
+      routes.hosts = res.hosts || [];
+      if (res.options) {
+        routes.options = [DEFAULT].concat(res.options);   // labels, in the Sheet's own order
+      } else {
+        // The older web app lists bare interface names, and "default" instead of an enabled flag.
+        routes.options = [DEFAULT].concat((res.allowed || []).map(function (wg) { return { label: wg, wg: wg }; }));
+        routes.hosts.forEach(function (h) {
+          if (h.enabled === undefined) { h.enabled = h.wg !== 'default'; if (!h.label && h.enabled) h.label = h.wg; }
+        });
+      }
+      routes.legacy = !res.options;
+      routes.sel = Math.max(0, routes.hosts.map(function (h) { return h.ip; }).indexOf(keep));
+      routesStatus('OK to change a device’s tunnel · Back to close');
+      drawRoutes();
+    });
+  }
+
+  function closeRoutes() {
+    routes.open = false;
+    $('routes').classList.add('hidden');
+  }
+
+  function drawRoutes() {
+    var box = $('routesList');
+    box.innerHTML = '';
+    routes.hosts.forEach(function (h, i) {
+      var row = document.createElement('div'), picking = routes.picking && i === routes.sel;
+      row.className = 'route' + (i === routes.sel ? ' sel' : '') + (picking ? ' picking' : '') + (h.enabled ? '' : ' plain');
+      row.innerHTML = '<span class="n"></span><span class="ip"></span><span class="wg"></span><span class="p"></span>';
+      row.children[0].textContent = h.name || '';
+      row.children[1].textContent = h.ip;
+      row.children[2].textContent = tunnelText(h);
+      row.children[3].textContent = h.pending && Date.now() - h.pending < 120000 ? 'applying…' : '';
+      row.addEventListener('click', function () {
+        if (routes.busy) return;
+        routes.sel = i;
+        routes.picking = true;
+        routes.choice = currentChoice(h);
+        drawRoutes();
+      });
+      box.appendChild(row);
+    });
+    var sel = box.children[routes.sel];
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+    drawMenu();
+  }
+
+  /** The tunnel menu for the selected device: every choice at once, the current one ticked. */
+  function drawMenu() {
+    var menu = $('routesMenu'), h = routes.hosts[routes.sel];
+    menu.classList.toggle('hidden', !routes.picking || !h);
+    if (!routes.picking || !h) return;
+    var current = currentChoice(h);
+    menu.innerHTML = '<div class="title"></div>';
+    menu.firstChild.textContent = h.name || h.ip;
+    routes.options.forEach(function (opt, i) {
+      var item = document.createElement('div');
+      item.className = 'opt' + (i === routes.choice ? ' sel' : '') + (i === current ? ' current' : '');
+      item.textContent = (i === current ? '✓ ' : '') + opt.label +
+        (opt.wg && opt.wg !== opt.label && opt !== DEFAULT ? '  · ' + opt.wg : '');
+      item.addEventListener('click', function (e) { e.stopPropagation(); if (!routes.busy) saveRoute(h, opt); });
+      menu.appendChild(item);
+    });
+    var s = menu.children[routes.choice + 1];
+    if (s) s.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** The choice matching the host's current setting: "default" when unticked, else its label. */
+  function currentChoice(h) {
+    if (!h.enabled) return 0;
+    for (var i = 1; i < routes.options.length; i++) if (routes.options[i].label === h.label) return i;
+    for (i = 1; i < routes.options.length; i++) if (routes.options[i].wg === h.wg) return i;
+    return 0;
+  }
+
+  function routesKey(k) {
+    if (routes.busy) return;
+    var h = routes.hosts[routes.sel], n = routes.options.length;
+    if (k === KEY.BACK || k === KEY.ESC) {
+      if (routes.picking) { routes.picking = false; drawRoutes(); } else closeRoutes();
+    } else if (!h) {
+      return;
+    } else if (routes.picking) {
+      if (k === KEY.UP) routes.choice = Math.max(0, routes.choice - 1);
+      else if (k === KEY.DOWN) routes.choice = Math.min(n - 1, routes.choice + 1);
+      else if (k === KEY.OK) { saveRoute(h, routes.options[routes.choice]); return; }
+      drawMenu();
+    } else {
+      if (k === KEY.UP) routes.sel = Math.max(0, routes.sel - 1);
+      else if (k === KEY.DOWN) routes.sel = Math.min(routes.hosts.length - 1, routes.sel + 1);
+      else if (k === KEY.OK) { routes.picking = true; routes.choice = currentChoice(h); }
+      drawRoutes();
+    }
+  }
+
+  function saveRoute(h, opt) {
+    routes.picking = false;
+    if (routes.options.indexOf(opt) === currentChoice(h)) { drawRoutes(); return; }
+    routes.busy = true;
+    routesStatus('Saving ' + (h.name || h.ip) + ' → ' + opt.label + '…');
+    var params = { action: 'TvSetTunnel', ip: h.ip };
+    // The older web app only understands wg=<interface>; the current one prefers the Sheet's label.
+    if (opt === DEFAULT) params.wg = 'default'; else if (routes.legacy) params.wg = opt.wg; else params.label = opt.label;
+    gas(params, function (res) {
+      routes.busy = false;
+      if (res.ok) {
+        var before = tunnelText(h);
+        if (res.to && typeof res.to === 'object') { h.label = res.to.label; h.wg = res.to.wg; }
+        else { h.label = opt.label; h.wg = opt.wg; }   // the older web app answers to: "<interface>"
+        h.enabled = opt === DEFAULT ? false : res.enabled !== false;
+        h.pending = Date.now();
+        routesStatus((h.name || h.ip) + ': ' + before + ' → ' + tunnelText(h) +
+          ' · the router applies it within about a minute (not 01:00-06:59)');
+      } else {
+        routesStatus(GAS_ERRORS[res.error] || res.error || 'Failed', true);
+      }
+      drawRoutes();
+    });
+  }
+
   // ---- keys and lifecycle --------------------------------------------------------------------
 
   function goHome() {
@@ -471,8 +654,11 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (e.keyCode === KEY.BACK || e.keyCode === KEY.ESC) { e.preventDefault(); goHome(); }
+    if (routes.open) { e.preventDefault(); routesKey(e.keyCode); return; }
+    if (e.keyCode === KEY.OK) { e.preventDefault(); openRoutes(); }
+    else if (e.keyCode === KEY.BACK || e.keyCode === KEY.ESC) { e.preventDefault(); goHome(); }
   });
+  $('cTop').addEventListener('click', function () { if (!routes.open) openRoutes(); });
 
   // Stop polling while another app is in front; poll right away on return.
   document.addEventListener('visibilitychange', function () {
