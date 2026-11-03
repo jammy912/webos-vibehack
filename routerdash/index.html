@@ -10,6 +10,8 @@
     <div id="title">
       <span id="host">Router</span><span id="role" class="pill"></span><span id="uptime"></span>
     </div>
+    <!-- The next five days' weather (Open-Meteo), for CONFIG.weather's place. -->
+    <div id="weather"></div>
     <div id="right">
       <span id="status"></span><span id="clock"></span>
     </div>
@@ -52,6 +54,8 @@
   </div>
 
   <script src="config.js"></script>
+  <!-- local.js (gitignored, optional) overrides CONFIG with private settings, e.g. CONFIG.weather = { city: 'Taichung' }. -->
+  <script src="local.js"></script>
   <!-- token.js (gitignored) sets window.TV_TOKEN; without it the route editor stays locked. -->
   <script src="token.js"></script>
   <script src="app.js"></script>

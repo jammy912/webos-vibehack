@@ -28,6 +28,11 @@ window.CONFIG = {
   // The route editor's Apps Script calls can be slow to start: wait this long (ms).
   gasTimeout: 15000,
 
+  // The five-day forecast in the header (Open-Meteo, no key needed). Your city goes in local.js (gitignored),
+  // e.g. CONFIG.weather = { city: 'Taichung' } (in English) or { lat: 24.15, lon: 120.68, place: '台中' }; with neither,
+  // it uses the city of the TV's public IP (its exit: a tunnel if the TV is routed through one). null hides it.
+  weather: {},
+
   // Back opens this app.
   launcher: 'com.gathin.tvhome'
 };

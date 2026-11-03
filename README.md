@@ -166,6 +166,10 @@ minute later. It needs `routerdash/token.js` (gitignored, never commit it) conta
 `window.TV_TOKEN = '<token>';`: the router hands out the Apps Script URL only for that token.
 Without the file the editor stays locked and the rest of the dashboard works as before.
 
+**Weather**: the header shows the next five days from Open-Meteo. Put your city in
+`routerdash/local.js` (gitignored, optional), e.g. `CONFIG.weather = { city: 'Taichung' };` (the city's English name; or
+`{ lat: 24.15, lon: 120.68, place: '台中' }`). Without it, the city of the TV's public IP is used.
+
 ## Cleaning up LG's home
 
 For when you do land on it. Names vary a little by webOS version:

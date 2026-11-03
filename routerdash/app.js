@@ -725,6 +725,137 @@
     });
   }
 
+  // ---- weather --------------------------------------------------------------------------------
+  //
+  // The next five days from Open-Meteo (free, no key, CORS open), for CONFIG.weather's place or the
+  // city of the TV's public IP. Fetched every 30 minutes; the last answer is kept so a restart shows it straight away.
+
+  var WEATHER_EVERY = 30 * 60 * 1000;
+  var WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
+  var SUN = '<circle cx="20" cy="15" r="7" fill="#ffd60a"/><g stroke="#ffd60a" stroke-width="2.4" stroke-linecap="round">' +
+    '<path d="M20 2v3M20 25v3M7 15h3M30 15h3M10.8 5.8l2.1 2.1M27.1 22.1l2.1 2.1M10.8 24.2l2.1-2.1M27.1 7.9l2.1-2.1"/></g>';
+  var CLOUD = function (fill) {
+    return '<path d="M11 31a7 7 0 0 1 0-14 9 9 0 0 1 17-2 7.5 7.5 0 0 1 1 16z" fill="' + fill + '"/>';
+  };
+  var ICONS = {
+    sun: SUN,
+    part: '<g transform="translate(5 -3) scale(.8)">' + SUN + '</g>' + CLOUD('#d1d1d6'),
+    cloud: CLOUD('#aeaeb2'),
+    fog: '<g stroke="#aeaeb2" stroke-width="3" stroke-linecap="round"><path d="M6 10h28M3 17h28M8 24h28M5 31h24"/></g>',
+    rain: '<g transform="translate(0 -6)">' + CLOUD('#8e8e93') + '</g><g stroke="#64d2ff" stroke-width="2.6" stroke-linecap="round">' +
+      '<path d="M13 28l-2 5M21 28l-2 5M29 28l-2 5"/></g>',
+    snow: '<g transform="translate(0 -6)">' + CLOUD('#aeaeb2') + '</g><g fill="#fff"><circle cx="12" cy="31" r="2"/><circle cx="20" cy="33" r="2"/><circle cx="28" cy="31" r="2"/></g>',
+    storm: '<g transform="translate(0 -6)">' + CLOUD('#636366') + '</g><path d="M22 24l-6 7h5l-3 6 8-9h-5l3-4z" fill="#ffd60a"/>'
+  };
+
+  /** WMO weather code → icon name. */
+  function weatherIcon(code) {
+    return code <= 1 ? 'sun' : code === 2 ? 'part' : code === 3 ? 'cloud' : code === 45 || code === 48 ? 'fog'
+      : code >= 95 ? 'storm' : (code >= 71 && code <= 77) || code === 85 || code === 86 ? 'snow' : 'rain';
+  }
+
+  function drawWeather(w) {
+    var box = $('weather'), d = w && w.daily;
+    box.innerHTML = '';
+    if (!d || !d.time) return;
+    var now = new Date(), today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    if (w.place) {
+      var pl = document.createElement('div');
+      pl.className = 'place';
+      pl.textContent = w.place;
+      box.appendChild(pl);
+    }
+    var shown = 0;
+    d.time.forEach(function (t, i) {
+      if (t < today || shown >= 5) return;   // a cached answer from yesterday: skip the past days
+      shown++;
+      var p = t.split('-'), day = new Date(+p[0], p[1] - 1, +p[2]).getDay();
+      var rain = d.precipitation_probability_max ? d.precipitation_probability_max[i] : null;
+      var el = document.createElement('div');
+      el.className = 'day' + (t === today ? ' today' : '');
+      el.innerHTML = '<svg viewBox="0 0 40 36">' + ICONS[weatherIcon(d.weather_code[i])] + '</svg><div class="txt">' +
+        '<div><span class="dn"></span><span class="p"></span></div><div class="t"><span class="hi"></span> <span class="lo"></span></div></div>';
+      el.querySelector('.dn').textContent = t === today ? '今天' : '週' + WEEKDAY[day];
+      el.querySelector('.hi').textContent = Math.round(d.temperature_2m_max[i]) + '°';
+      el.querySelector('.lo').textContent = Math.round(d.temperature_2m_min[i]) + '°';
+      var pe = el.querySelector('.p');
+      pe.textContent = rain === null || rain === undefined ? '' : '☂ ' + rain + '%';
+      pe.className = 'p' + (rain < 30 ? ' dry' : '');
+      box.appendChild(el);
+    });
+  }
+
+  /** Where to forecast: CONFIG.weather's coordinates, else its city (local.js), else the city of the TV's
+   *  public IP (geojs.io).
+   *  The found place is kept, so it's looked up once per start (and the last one is used if that fails). */
+  var weatherAt = null;
+  try { weatherAt = JSON.parse(localStorage.getItem('weatherAt')); } catch (e) { }
+  function locate(cb) {
+    var c = CONFIG.weather;
+    if (typeof c.lat === 'number' && typeof c.lon === 'number') return cb({ lat: c.lat, lon: c.lon, place: c.place || '' });
+    if (locate.found) return cb(locate.found);
+    function found(at) { locate.found = at; localStorage.setItem('weatherAt', JSON.stringify(at)); cb(at); }
+    function lost() { if (weatherAt && (!c.city || weatherAt.city === c.city)) cb(weatherAt); }
+    /** A city name, in English: Open-Meteo's geocoder misses or misplaces Chinese ones (台中: nothing;
+     *  高雄, 台南: towns in China), while Taichung, Kaohsiung… come back right, named in Chinese. */
+    function byCity() {
+      var x = new XMLHttpRequest();
+      x.open('GET', 'https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&name=' + encodeURIComponent(c.city));
+      x.timeout = 15000;
+      x.onload = function () {
+        try {
+          var r = (JSON.parse(x.responseText).results || [])[0];
+          if (r) return found({ lat: r.latitude, lon: r.longitude, place: c.place || r.name, city: c.city });
+        } catch (e) { }
+        if (weatherAt && weatherAt.city === c.city) cb(weatherAt); else byIp();   // unknown city: fall back to the IP
+      };
+      x.onerror = x.ontimeout = lost;
+      x.send();
+    }
+    function byIp() {
+      var x = new XMLHttpRequest();
+      x.open('GET', 'https://get.geojs.io/v1/ip/geo.json');
+      x.timeout = 15000;
+      x.onload = function () {
+        try {
+          var g = JSON.parse(x.responseText);
+          if (g.latitude && g.longitude) return found({ lat: +g.latitude, lon: +g.longitude, place: c.place || g.city || '' });
+        } catch (e) { }
+        lost();
+      };
+      x.onerror = x.ontimeout = lost;
+      x.send();
+    }
+    if (c.city) byCity(c.city); else byIp();
+  }
+
+  function refreshWeather() {
+    locate(function (at) {
+      var x = new XMLHttpRequest();
+      x.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=' + at.lat + '&longitude=' + at.lon +
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=6');
+      x.timeout = 15000;
+      x.onload = function () {
+        try {
+          var w = JSON.parse(x.responseText);
+          if (!w.daily) return;
+          w.place = at.place;
+          drawWeather(w);
+          localStorage.setItem('weather', JSON.stringify(w));
+        } catch (e) { }
+      };
+      x.send();
+    });
+  }
+
+  if (CONFIG.weather) {
+    try { drawWeather(JSON.parse(localStorage.getItem('weather'))); } catch (e) { }
+    refreshWeather();
+    setInterval(refreshWeather, WEATHER_EVERY);
+    // Past midnight, roll the cached days over to the new "today" without waiting for the next fetch.
+    setInterval(function () { try { drawWeather(JSON.parse(localStorage.getItem('weather'))); } catch (e) { } }, 10 * 60 * 1000);
+  }
+
   // ---- keys and lifecycle --------------------------------------------------------------------
 
   /** Scales the 1920x1080 screen to fit the window, keeping its shape, centred (1 on the TV). */
