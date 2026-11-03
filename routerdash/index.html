@@ -10,7 +10,7 @@
     <div id="title">
       <span id="host">Router</span><span id="role" class="pill"></span><span id="uptime"></span>
     </div>
-    <!-- The next five days' weather (Open-Meteo), for CONFIG.weather's place. -->
+    <!-- The next six days' weather (Open-Meteo), for CONFIG.weather's place. -->
     <div id="weather"></div>
     <div id="right">
       <span id="status"></span><span id="clock"></span>
@@ -44,6 +44,12 @@
 
   <div class="sectionLabel">WireGuard</div>
   <div id="wg"></div>
+
+  <!-- A day's hourly forecast (click a day in the header, or Up). -->
+  <div id="hourly" class="hidden">
+    <div class="label"><span id="hourlyHead"></span><span id="hourlyRain"></span><span class="aside">◀ ▶ 換一天 · OK 關閉</span></div>
+    <div id="hourlyList"></div>
+  </div>
 
   <!-- Route editor: every static host and the tunnel it goes through (OK opens it). -->
   <div id="routes" class="hidden">

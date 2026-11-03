@@ -48,7 +48,7 @@ header {
 .pill:empty { display: none; }
 #uptime { margin-left: 22px; font-size: 26px; vertical-align: 16px; color: rgba(255, 255, 255, 0.55); }
 
-/* Five days between the uptime and the clock, centred in the gap; hidden while the status line is long. */
+/* Six days between the uptime and the clock, centred in the gap; hidden while the status line is long. */
 #weather { flex: 1; display: flex; justify-content: center; align-items: center; align-self: center; gap: 8px; margin: 0 24px; }
 #weather .day { display: flex; align-items: center; padding: 5px 12px 5px 6px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); }
 #weather .day.today { background: rgba(255, 255, 255, 0.14); }
@@ -57,10 +57,43 @@ header {
 #weather .dn { font-size: 17px; color: rgba(255, 255, 255, 0.6); }
 #weather .p { margin-left: 6px; font-size: 15px; color: #64d2ff; }
 #weather .p.dry { color: rgba(255, 255, 255, 0.3); }
+#weather .p.wet { color: #0a84ff; font-weight: 700; }
 #weather .t { font-size: 20px; }
 #weather .t .lo { color: rgba(255, 255, 255, 0.5); }
 #weather .place { margin-right: 4px; font-size: 17px; color: rgba(255, 255, 255, 0.45); }
 body.stale #weather { display: none; }
+#weather .day { cursor: pointer; }
+#weather .day.sel { background: rgba(255, 255, 255, 0.92); color: #000; }
+#weather .day.sel .dn, #weather .day.sel .t .lo, #weather .day.sel .p.dry { color: rgba(0, 0, 0, 0.5); }
+#weather .day.sel .p { color: #0a5fd6; }
+#weather .day.sel .p.wet { color: #003f9e; }
+
+/* A day's hourly forecast: drops down under the header, over the cards. */
+#hourly {
+  position: absolute;
+  left: 100px; right: 100px; top: 150px;
+  z-index: 9;
+  padding: 22px 28px 20px;
+  border-radius: 24px;
+  background: #16161a;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  transition: opacity 200ms ease;
+}
+#hourly.hidden { opacity: 0; pointer-events: none; }
+#hourly .label { text-transform: none; letter-spacing: 0; font-size: 24px; color: #fff; }
+#hourly .label .aside { float: right; font-size: 18px; }
+#hourly .label .p { margin-left: 24px; font-size: 24px; line-height: inherit; }
+#hourlyList { display: flex; margin-top: 16px; font-size: 20px; color: rgba(255, 255, 255, 0.6); }
+#hourly .hr { flex: 1; padding: 8px 0 10px; border-radius: 14px; text-align: center; }
+#hourly .hr.now { background: rgba(255, 255, 255, 0.1); }
+#hourly .hr.midnight { border-left: 1px solid rgba(255, 255, 255, 0.18); border-radius: 0; }
+#hourly .h { font-size: 17px; line-height: 22px; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+#hourly .hr.now .h, #hourly .hr.midnight .h { color: #fff; font-weight: 600; }
+#hourly svg { display: block; width: 44px; height: 40px; margin: 6px auto; }
+#hourly .tt { font-size: 24px; line-height: 28px; color: #fff; }
+#hourly .p { font-size: 15px; line-height: 20px; color: #64d2ff; }
+#hourly .p.dry { color: rgba(255, 255, 255, 0.3); }
+#hourly .p.wet { color: #0a84ff; font-weight: 700; }
 
 #right { font-size: 30px; color: rgba(255, 255, 255, 0.6); }
 #status { margin-right: 32px; }

@@ -727,19 +727,24 @@
 
   // ---- weather --------------------------------------------------------------------------------
   //
-  // The next five days from Open-Meteo (free, no key, CORS open), for CONFIG.weather's place or the
+  // The next six days from Open-Meteo (free, no key, CORS open), for CONFIG.weather's place or the
   // city of the TV's public IP. Fetched every 30 minutes; the last answer is kept so a restart shows it straight away.
 
   var WEATHER_EVERY = 30 * 60 * 1000;
+  var DAYS = 6;
+  var weather = null;   // the last forecast: { daily, hourly, place }
   var WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
   var SUN = '<circle cx="20" cy="15" r="7" fill="#ffd60a"/><g stroke="#ffd60a" stroke-width="2.4" stroke-linecap="round">' +
     '<path d="M20 2v3M20 25v3M7 15h3M30 15h3M10.8 5.8l2.1 2.1M27.1 22.1l2.1 2.1M10.8 24.2l2.1-2.1M27.1 7.9l2.1-2.1"/></g>';
   var CLOUD = function (fill) {
     return '<path d="M11 31a7 7 0 0 1 0-14 9 9 0 0 1 17-2 7.5 7.5 0 0 1 1 16z" fill="' + fill + '"/>';
   };
+  var MOON = '<path d="M24 3a12 12 0 1 0 11 17A10 10 0 0 1 24 3z" fill="#e5e5ea"/>';
   var ICONS = {
     sun: SUN,
     part: '<g transform="translate(5 -3) scale(.8)">' + SUN + '</g>' + CLOUD('#d1d1d6'),
+    moon: MOON,
+    moonpart: '<g transform="translate(6 -2) scale(.75)">' + MOON + '</g>' + CLOUD('#aeaeb2'),
     cloud: CLOUD('#aeaeb2'),
     fog: '<g stroke="#aeaeb2" stroke-width="3" stroke-linecap="round"><path d="M6 10h28M3 17h28M8 24h28M5 31h24"/></g>',
     rain: '<g transform="translate(0 -6)">' + CLOUD('#8e8e93') + '</g><g stroke="#64d2ff" stroke-width="2.6" stroke-linecap="round">' +
@@ -748,17 +753,32 @@
     storm: '<g transform="translate(0 -6)">' + CLOUD('#636366') + '</g><path d="M22 24l-6 7h5l-3 6 8-9h-5l3-4z" fill="#ffd60a"/>'
   };
 
-  /** WMO weather code → icon name. */
-  function weatherIcon(code) {
-    return code <= 1 ? 'sun' : code === 2 ? 'part' : code === 3 ? 'cloud' : code === 45 || code === 48 ? 'fog'
+  /** WMO weather code → icon name (a moon on clear nights). */
+  function weatherIcon(code, night) {
+    return code <= 1 ? (night ? 'moon' : 'sun') : code === 2 ? (night ? 'moonpart' : 'part') : code === 3 ? 'cloud' : code === 45 || code === 48 ? 'fog'
       : code >= 95 ? 'storm' : (code >= 71 && code <= 77) || code === 85 || code === 86 ? 'snow' : 'rain';
   }
+
+  /** WMO weather code → words. */
+  function weatherWords(code) {
+    return code === 0 ? '晴' : code === 1 ? '大致晴朗' : code === 2 ? '晴時多雲' : code === 3 ? '陰' : code === 45 || code === 48 ? '霧'
+      : code >= 51 && code <= 57 ? '毛毛雨' : code >= 61 && code <= 67 ? '雨' : code >= 80 && code <= 82 ? '陣雨'
+      : code >= 95 ? '雷雨' : '雪';
+  }
+
+  /** A chance of rain's colour: grey below 30 %, light blue, darker blue from 60 %. */
+  function rainClass(r) { return r < 30 ? ' dry' : r >= 60 ? ' wet' : ''; }
+
+  function pad2(n) { return ('0' + n).slice(-2); }
+  function localDay(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function weekday(t) { var p = t.split('-'); return WEEKDAY[new Date(+p[0], p[1] - 1, +p[2]).getDay()]; }
 
   function drawWeather(w) {
     var box = $('weather'), d = w && w.daily;
     box.innerHTML = '';
     if (!d || !d.time) return;
-    var now = new Date(), today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    weather = w;
+    var today = localDay(new Date());
     if (w.place) {
       var pl = document.createElement('div');
       pl.className = 'place';
@@ -767,22 +787,87 @@
     }
     var shown = 0;
     d.time.forEach(function (t, i) {
-      if (t < today || shown >= 5) return;   // a cached answer from yesterday: skip the past days
+      if (t < today || shown >= DAYS) return;   // a cached answer from yesterday: skip the past days
       shown++;
-      var p = t.split('-'), day = new Date(+p[0], p[1] - 1, +p[2]).getDay();
       var rain = d.precipitation_probability_max ? d.precipitation_probability_max[i] : null;
       var el = document.createElement('div');
-      el.className = 'day' + (t === today ? ' today' : '');
+      el.className = 'day' + (t === today ? ' today' : '') + (hourly.open && hourly.day === t ? ' sel' : '');
+      el.addEventListener('click', function () { if (hourly.open && hourly.day === t) closeHourly(); else openHourly(t); });
       el.innerHTML = '<svg viewBox="0 0 40 36">' + ICONS[weatherIcon(d.weather_code[i])] + '</svg><div class="txt">' +
         '<div><span class="dn"></span><span class="p"></span></div><div class="t"><span class="hi"></span> <span class="lo"></span></div></div>';
-      el.querySelector('.dn').textContent = t === today ? '今天' : '週' + WEEKDAY[day];
+      el.querySelector('.dn').textContent = t === today ? '今天' : '週' + weekday(t);
       el.querySelector('.hi').textContent = Math.round(d.temperature_2m_max[i]) + '°';
       el.querySelector('.lo').textContent = Math.round(d.temperature_2m_min[i]) + '°';
       var pe = el.querySelector('.p');
       pe.textContent = rain === null || rain === undefined ? '' : '☂ ' + rain + '%';
-      pe.className = 'p' + (rain < 30 ? ' dry' : '');
+      pe.className = 'p' + rainClass(rain);
       box.appendChild(el);
     });
+  }
+
+  // ---- hourly forecast: click a day (or Up) to open it, Left/Right for the next day, Back or OK closes.
+  //
+  // Today runs from this hour for 24 hours, as on a phone; other days show 00-23.
+
+  var hourly = { open: false, day: null };
+
+  function forecastDays() {
+    var today = localDay(new Date());
+    return weather && weather.daily ? weather.daily.time.filter(function (t) { return t >= today; }).slice(0, DAYS) : [];
+  }
+
+  function openHourly(day) {
+    if (!weather) return;
+    hourly.open = true;
+    hourly.day = day;
+    drawHourly();
+    $('hourly').classList.remove('hidden');
+    drawWeather(weather);   // marks the day
+  }
+
+  function closeHourly() {
+    hourly.open = false;
+    $('hourly').classList.add('hidden');
+    if (weather) drawWeather(weather);
+  }
+
+  function drawHourly() {
+    var h = weather.hourly, d = weather.daily, day = hourly.day, now = new Date(), today = localDay(now);
+    var i = d.time.indexOf(day), box = $('hourlyList');
+    var hd = (day === today ? '今天' : '週' + weekday(day)) + ' ' + (+day.slice(5, 7)) + '/' + (+day.slice(8, 10));
+    if (i >= 0) {
+      hd += '　' + weatherWords(d.weather_code[i]) + '　' + Math.round(d.temperature_2m_max[i]) + '° / ' + Math.round(d.temperature_2m_min[i]) + '°';
+    }
+    $('hourlyHead').textContent = hd;
+    // The day's chance of rain, coloured as in its header chip.
+    var rain = i >= 0 && d.precipitation_probability_max ? d.precipitation_probability_max[i] : null, re = $('hourlyRain');
+    re.textContent = rain === null || rain === undefined ? '' : '☂ ' + rain + '%';
+    re.className = 'p' + rainClass(rain);
+    box.innerHTML = '';
+    if (!h || !h.time) { box.textContent = '每小時預報下次更新後才有'; return; }
+    var from = day === today ? day + 'T' + pad2(now.getHours()) + ':00' : day + 'T00:00';
+    var start = h.time.indexOf(from);
+    if (start < 0) { box.textContent = '沒有這天的每小時預報'; return; }
+    for (var k = start; k < start + 24 && k < h.time.length; k++) {
+      var t = h.time[k], hr = +t.slice(11, 13), rain = h.precipitation_probability ? h.precipitation_probability[k] : null;
+      var el = document.createElement('div');
+      el.className = 'hr' + (k === start && day === today ? ' now' : '') + (hr === 0 && k !== start ? ' midnight' : '');
+      el.innerHTML = '<div class="h"></div><svg viewBox="0 0 40 36">' +
+        ICONS[weatherIcon(h.weather_code[k], h.is_day && h.is_day[k] === 0)] + '</svg><div class="tt"></div><div class="p"></div>';
+      el.querySelector('.h').textContent = k === start && day === today ? '現在' : hr === 0 ? '週' + weekday(t.slice(0, 10)) : hr + '時';
+      el.querySelector('.tt').textContent = Math.round(h.temperature_2m[k]) + '°';
+      var pe = el.querySelector('.p');
+      pe.textContent = rain === null || rain === undefined ? '' : rain + '%';
+      pe.className = 'p' + rainClass(rain);
+      box.appendChild(el);
+    }
+  }
+
+  function hourlyKey(k) {
+    var days = forecastDays(), i = days.indexOf(hourly.day);
+    if (k === KEY.LEFT && i > 0) openHourly(days[i - 1]);
+    else if (k === KEY.RIGHT && i >= 0 && i < days.length - 1) openHourly(days[i + 1]);
+    else if (k === KEY.BACK || k === KEY.ESC || k === KEY.OK || k === KEY.DOWN) closeHourly();
   }
 
   /** Where to forecast: CONFIG.weather's coordinates, else its city (local.js), else the city of the TV's
@@ -833,7 +918,8 @@
     locate(function (at) {
       var x = new XMLHttpRequest();
       x.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=' + at.lat + '&longitude=' + at.lon +
-        '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=6');
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+        '&hourly=temperature_2m,weather_code,precipitation_probability,is_day&timezone=auto&forecast_days=' + (DAYS + 1));
       x.timeout = 15000;
       x.onload = function () {
         try {
@@ -841,6 +927,7 @@
           if (!w.daily) return;
           w.place = at.place;
           drawWeather(w);
+          if (hourly.open) drawHourly();
           localStorage.setItem('weather', JSON.stringify(w));
         } catch (e) { }
       };
@@ -876,10 +963,13 @@
 
   document.addEventListener('keydown', function (e) {
     if (routes.open) { e.preventDefault(); routesKey(e.keyCode); return; }
+    if (hourly.open) { e.preventDefault(); hourlyKey(e.keyCode); return; }
+    if (e.keyCode === KEY.UP && forecastDays().length) { e.preventDefault(); openHourly(forecastDays()[0]); return; }
     if (e.keyCode === KEY.OK) { e.preventDefault(); openRoutes(); }
     else if (e.keyCode === KEY.BACK || e.keyCode === KEY.ESC) { e.preventDefault(); goHome(); }
   });
   $('cTop').addEventListener('click', function () { if (!routes.open) openRoutes(); });
+  $('hourly').addEventListener('click', closeHourly);
 
   // Stop polling while another app is in front; poll right away on return.
   document.addEventListener('visibilitychange', function () {
