@@ -156,7 +156,7 @@ body.stale .card { opacity: 0.35; }
 .label .aside { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
 #cards .value { font-size: 50px; margin-top: 4px; }
 /* The empty top right of a card, beside the big number: Connections' % full, Memory's flash free / total. */
-#cards .corner { position: absolute; right: 22px; top: 70px; font-size: 22px; color: rgba(255, 255, 255, 0.6); }
+#cards .corner { position: absolute; right: 24px; top: 64px; font-size: 32px; color: rgba(255, 255, 255, 0.7); }
 #flash { position: absolute; right: 18px; top: 64px; display: flex; align-items: center; color: rgba(255, 255, 255, 0.75); }
 #flash.hidden { display: none; }
 #flash svg { width: 26px; height: 26px; margin-right: 6px; color: rgba(255, 255, 255, 0.5); }
