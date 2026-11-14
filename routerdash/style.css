@@ -34,6 +34,7 @@ header {
   align-items: baseline;
 }
 
+#title { flex: none; white-space: nowrap; }
 #host { font-size: 64px; font-weight: 300; letter-spacing: -0.01em; }
 
 .pill {
@@ -49,8 +50,8 @@ header {
 #uptime { margin-left: 22px; font-size: 26px; vertical-align: 16px; color: rgba(255, 255, 255, 0.55); }
 
 /* Six days between the uptime and the clock, centred in the gap; hidden while the status line is long. */
-#weather { flex: 1; display: flex; justify-content: center; align-items: center; align-self: center; gap: 8px; margin: 0 24px; }
-#weather .day { display: flex; align-items: center; padding: 5px 12px 5px 6px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); }
+#weather { flex: 1; display: flex; justify-content: center; align-items: center; align-self: center; gap: 6px; margin: 0 16px; }
+#weather .day { display: flex; align-items: center; padding: 5px 9px 5px 4px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); }
 #weather .day.today { background: rgba(255, 255, 255, 0.14); }
 #weather svg { flex: none; width: 40px; height: 36px; margin-right: 6px; }
 #weather .txt { line-height: 23px; white-space: nowrap; }
@@ -60,7 +61,7 @@ header {
 #weather .p.wet { color: #0a84ff; font-weight: 700; }
 #weather .t { font-size: 20px; }
 #weather .t .lo { color: rgba(255, 255, 255, 0.5); }
-#weather .place { margin-right: 4px; font-size: 17px; color: rgba(255, 255, 255, 0.45); }
+#weather .place { flex: none; margin-right: 4px; font-size: 17px; color: rgba(255, 255, 255, 0.45); white-space: nowrap; }
 body.stale #weather { display: none; }
 #weather .day { cursor: pointer; }
 #weather .day.sel { background: rgba(255, 255, 255, 0.92); color: #000; }
@@ -99,6 +100,11 @@ body.stale #weather { display: none; }
 #status { margin-right: 32px; }
 #status.bad { color: #ff453a; }
 #clock { color: #fff; font-size: 40px; font-weight: 300; }
+/* The date (with year and weekday) stacked small above the time, both right-aligned. */
+#right { align-self: center; display: flex; align-items: center; }
+#when { display: inline-flex; flex-direction: column; align-items: flex-end; }
+#date { font-size: 20px; line-height: 24px; color: rgba(255, 255, 255, 0.6); white-space: nowrap; }
+#when #clock { line-height: 44px; }
 
 /* ---- cards ----------------------------------------------------------------------------------- */
 

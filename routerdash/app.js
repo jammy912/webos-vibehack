@@ -541,6 +541,8 @@
   function updateClock() {
     var d = new Date();
     $('clock').textContent = d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2);
+    // The date with the year and weekday, small, above the time.
+    $('date').textContent = d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' 週' + '日一二三四五六'.charAt(d.getDay());
   }
 
   // ---- route editor ---------------------------------------------------------------------------
