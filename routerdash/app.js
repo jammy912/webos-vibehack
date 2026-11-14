@@ -170,6 +170,10 @@
     var hot = temp > 85 ? 'bad' : temp > 75 ? 'warn' : 'ok';
     card('cCpu', hot, cpuPct !== null ? Math.round(cpuPct) + '%' : '--', loads, cpuPct !== null ? cpuPct / 100 : 0);
     if (cpuPct === null && hot === 'ok') gauge($('cCpu'), '', 0);
+    // The % in the bar's colour, like Memory: green up to 40 %, through amber to red (at least amber when
+    // hot over 75 °C, red over 85 °C). No colour until there's a figure.
+    $('cCpu').querySelector('.value').style.color = cpuPct === null ? ''
+      : pingColor(hot === 'bad' ? 1 : hot === 'warn' ? Math.max(cpuPct / 100, 0.75) : cpuPct / 100);
 
     $('memTotal').textContent = d.mem_total ? bytes(d.mem_total) : '';
     if (d.mem_total && d.mem_available !== null) {
