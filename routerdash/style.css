@@ -155,6 +155,15 @@ body.stale .card { opacity: 0.35; }
 #cards #cCpu { flex: 1.35; }   /* room for the 1, 5 and 15 minute loads */
 .label .aside { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
 #cards .value { font-size: 50px; margin-top: 4px; }
+/* The empty top right of a card, beside the big number: Connections' % full, Memory's flash free / total. */
+#cards .corner { position: absolute; right: 22px; top: 70px; font-size: 22px; color: rgba(255, 255, 255, 0.6); }
+#flash { position: absolute; right: 18px; top: 64px; display: flex; align-items: center; color: rgba(255, 255, 255, 0.75); }
+#flash.hidden { display: none; }
+#flash svg { width: 26px; height: 26px; margin-right: 6px; color: rgba(255, 255, 255, 0.5); }
+#flash .free { font-size: 19px; line-height: 23px; white-space: nowrap; }
+#flash .tot { font-size: 15px; line-height: 19px; color: rgba(255, 255, 255, 0.45); white-space: nowrap; }
+#flash.warn, #flash.warn svg { color: #ffb340; }
+#flash.bad, #flash.bad svg { color: #ff6b61; }
 
 /* Throughput takes two thirds; ports and Wi-Fi share the last third, stacked. */
 #middle {

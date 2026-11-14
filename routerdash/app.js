@@ -177,10 +177,20 @@
       card('cMem', free < 25 * 1048576 ? 'bad' : free < 50 * 1048576 ? 'warn' : 'ok',
         Math.round((1 - free / d.mem_total) * 100) + '%', bytes(free) + ' free', 1 - free / d.mem_total);
     } else card('cMem', '', '-', '');
+    // Flash (the overlay): free over total in the card's empty right side; amber below 20 % free, red below 10 %.
+    var fl = $('flash'), ft = d.flash_total, fa = d.flash_available;
+    fl.classList.toggle('hidden', !(ft > 0 && typeof fa === 'number'));
+    if (ft > 0 && typeof fa === 'number') {
+      fl.className = fa / ft < 0.1 ? 'bad' : fa / ft < 0.2 ? 'warn' : '';
+      fl.querySelector('.free').textContent = bytes(fa);
+      fl.querySelector('.tot').textContent = '/ ' + bytes(ft);
+    }
 
     var ct = d.conntrack || {};
     var full = ct.max ? ct.count / ct.max : 0;
     card('cConn', full > 0.9 ? 'bad' : full > 0.7 ? 'warn' : 'ok', num(ct.count), 'of ' + num(ct.max), full);
+    // How full the conntrack table is, in the card's empty top right (one decimal below 10 %).
+    $('connPct').textContent = ct.max ? (full < 0.1 ? (full * 100).toFixed(1) : Math.round(full * 100)) + '%' : '';
 
     if (d.dhcp_clients === null || d.dhcp_clients === undefined) card('cDhcp', 'na', 'N/A', sub ? 'not on this gateway' : '');
     else card('cDhcp', 'ok', num(d.dhcp_clients), 'leases');
