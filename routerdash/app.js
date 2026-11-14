@@ -188,9 +188,14 @@
 
     var ct = d.conntrack || {};
     var full = ct.max ? ct.count / ct.max : 0;
-    card('cConn', full > 0.9 ? 'bad' : full > 0.7 ? 'warn' : 'ok', num(ct.count), 'of ' + num(ct.max), full);
-    // How full the conntrack table is, in the card's empty top right (one decimal below 10 %).
-    $('connPct').textContent = ct.max ? (full < 0.1 ? (full * 100).toFixed(1) : Math.round(full * 100)) + '%' : '';
+    var cs = full > 0.9 ? 'bad' : full > 0.7 ? 'warn' : 'ok';
+    card('cConn', cs, num(ct.count), 'of ' + num(ct.max), full);
+    $('cConn').classList.toggle('long', ct.count >= 10000);   // five digits: shrink both so they don't collide
+    // How full the conntrack table is, in the card's empty top right (one decimal below 10 %), coloured
+    // like the card's bar: green up to 40 %, through amber to red (at least amber over 70 %, red over 90 %).
+    var cp = $('connPct');
+    cp.textContent = ct.max ? (full < 0.1 ? (full * 100).toFixed(1) : Math.round(full * 100)) + '%' : '';
+    cp.style.color = ct.max ? pingColor(cs === 'bad' ? 1 : cs === 'warn' ? Math.max(full, 0.75) : full) : '';
 
     if (d.dhcp_clients === null || d.dhcp_clients === undefined) card('cDhcp', 'na', 'N/A', sub ? 'not on this gateway' : '');
     else card('cDhcp', 'ok', num(d.dhcp_clients), 'leases');
