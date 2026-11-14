@@ -248,11 +248,13 @@
       // A LAN port in batman's bat0 instead of br-lan is the wired mesh backbone.
       row.children[2].textContent = p.up ? (p.speed_mbps ? speed(p.speed_mbps) : 'up') + (p.attached === 'bat0' ? ' · mesh' : '')
         : 'not connected';
-      // Down and up in the throughput graph's colours (blue, purple).
-      var r = row.children[3];
-      if (!r.firstChild) r.innerHTML = '<span class="down"></span><span class="up"></span>';
-      r.firstChild.textContent = p.up && h ? '↓ ' + rate(h.down) : '';
-      r.lastChild.textContent = p.up && h ? '↑ ' + rate(h.up) : '';
+      // Down and up in the throughput graph's colours (blue, purple), each in a fixed column: the arrow
+      // on its left edge, the figure right-aligned, so rows line up.
+      var r = row.children[3], on = p.up && h;
+      if (!r.firstChild) r.innerHTML = '<span class="down"><i>↓</i><b></b></span><span class="up"><i>↑</i><b></b></span>';
+      r.classList.toggle('none', !on);
+      r.firstChild.lastChild.textContent = on ? rate(h.down) : '';
+      r.lastChild.lastChild.textContent = on ? rate(h.up) : '';
     });
     var bad = ports.some(function (p) { return p.role === 'wan' && !p.up; });
     gauge($('cPorts'), ports.length ? (bad ? 'bad' : 'ok') : '', null);

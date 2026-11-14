@@ -194,7 +194,12 @@ body.stale .card { opacity: 0.35; }
 .list .row .n { width: 104px; overflow: hidden; text-overflow: ellipsis; }
 .list .row .m { flex: 1; color: rgba(255, 255, 255, 0.6); overflow: hidden; text-overflow: ellipsis; }
 .list .row .r { margin-left: 10px; font-size: 18px; }
-#cPorts .row .r .up:not(:empty) { margin-left: 12px; }
+/* Down and up in fixed columns, arrow on the left and the figure right-aligned, so rows line up. */
+#cPorts .row .r span { display: inline-flex; justify-content: space-between; width: 100px; }
+#cPorts .row .r i { font-style: normal; }
+#cPorts .row .r b { font-weight: normal; }
+#cPorts .row .r .up { margin-left: 14px; }
+#cPorts .row .r.none { display: none; }
 .list .row .big { font-size: 24px; margin-left: 10px; }
 .list .empty { font-size: 20px; color: rgba(255, 255, 255, 0.45); margin-top: 4px; }
 #wifiTotal { text-transform: none; letter-spacing: 0; margin-left: 8px; color: rgba(255, 255, 255, 0.35); }
