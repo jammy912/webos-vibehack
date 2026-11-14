@@ -173,10 +173,11 @@
 
     $('memTotal').textContent = d.mem_total ? bytes(d.mem_total) : '';
     if (d.mem_total && d.mem_available !== null) {
-      var free = d.mem_available;
-      card('cMem', free < 25 * 1048576 ? 'bad' : free < 50 * 1048576 ? 'warn' : 'ok',
-        Math.round((1 - free / d.mem_total) * 100) + '%', bytes(free) + ' free', 1 - free / d.mem_total);
-    } else card('cMem', '', '-', '');
+      var free = d.mem_available, ms = free < 25 * 1048576 ? 'bad' : free < 50 * 1048576 ? 'warn' : 'ok', mu = 1 - free / d.mem_total;
+      card('cMem', ms, Math.round(mu * 100) + '%', bytes(free) + ' free', mu);
+      // The % in the bar's colour: green up to 40 % used, through amber to red (at least amber under 50 MB free, red under 25 MB).
+      $('cMem').querySelector('.value').style.color = pingColor(ms === 'bad' ? 1 : ms === 'warn' ? Math.max(mu, 0.75) : mu);
+    } else { card('cMem', '', '-', ''); $('cMem').querySelector('.value').style.color = ''; }
     // Flash (the overlay): free over total in the card's empty right side. The free figure is coloured by
     // how full the flash is, like the bars: green up to 40 % used, through amber to red; the icon too once
     // it's low (amber below 20 % free, red below 10 %).
