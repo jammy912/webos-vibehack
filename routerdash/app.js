@@ -177,11 +177,15 @@
       card('cMem', free < 25 * 1048576 ? 'bad' : free < 50 * 1048576 ? 'warn' : 'ok',
         Math.round((1 - free / d.mem_total) * 100) + '%', bytes(free) + ' free', 1 - free / d.mem_total);
     } else card('cMem', '', '-', '');
-    // Flash (the overlay): free over total in the card's empty right side; amber below 20 % free, red below 10 %.
+    // Flash (the overlay): free over total in the card's empty right side. The free figure is coloured by
+    // how full the flash is, like the bars: green up to 40 % used, through amber to red; the icon too once
+    // it's low (amber below 20 % free, red below 10 %).
     var fl = $('flash'), ft = d.flash_total, fa = d.flash_available;
     fl.classList.toggle('hidden', !(ft > 0 && typeof fa === 'number'));
     if (ft > 0 && typeof fa === 'number') {
-      fl.className = fa / ft < 0.1 ? 'bad' : fa / ft < 0.2 ? 'warn' : '';
+      var fs = fa / ft < 0.1 ? 'bad' : fa / ft < 0.2 ? 'warn' : '', used = 1 - fa / ft;
+      fl.className = fs;
+      fl.querySelector('.free').style.color = pingColor(fs === 'bad' ? 1 : fs === 'warn' ? Math.max(used, 0.75) : used);
       fl.querySelector('.free').textContent = bytes(fa);
       fl.querySelector('.tot').textContent = '/ ' + bytes(ft);
     }
